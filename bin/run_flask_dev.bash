@@ -7,5 +7,5 @@ echo "[>>]  Activate Isolated python"
 . venv/bin/activate
 
 echo "[>>]  Run app in Flask development server" 
-FLASK_APP="src.web.myapp:app" flask run
+FLASK_ENV="development" FLASK_APP="src.web.myapp:app" flask run
 
