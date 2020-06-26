@@ -13,32 +13,8 @@ This is a Job controller sutie
 - Flask    : Backend app handles job actions, logs, and talks to redis
 - Redis    : RedisRQ job queue
 ```
-## Build:
+## Scripts:
 ```.
-- Run dockerd on host OS
-- Create Docker Volumes for logs and redis 
-  docker volume create job_logs
-- Build containers and start them
-  docker-compose up --build
-- Test: http://127.0.0.1/
-- Under Hamberger menu, Edit Stations
-  Add sations
-- Under Hamberger menu, Run Test
-  Fill in the form, and click run
-```
-## WEB APP Structure:
-```.
-The Client is written in React, using Context for state
- Location: nginx/react
-The Server is written in Python with Flask
- Location: src/web 
-The Worker is written in Python 
- Location: src/util
-```
-## WEB API:
-setup_python_venv.bash - For development create a python virtualenv.
-setup.py - Run by Dockerfiles, creating a Python *.whl file, installed in the Containers.
-## WEB API:
-```.
-WIP:
+setup_python_venv.bash : In development, setup isolated python 
+run_flask_dev.bash     : In development, directlry run flask
 ```
