@@ -18,3 +18,6 @@ This is a Job controller sutie
 setup_python_venv.bash : In development, setup isolated python 
 run_flask_dev.bash     : In development, directlry run flask
 ```
+## Docker:
+docker-compose.yml     : Runs Docker file, sets up ports, volumes, etc
+Dockerfile.swagger-ui  : Run Swagger-ui to test API
