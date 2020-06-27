@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+
+  swagger-ui:
+    image: 'johnnywhoops/swagger-ui:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.swagger-ui
+    ports:
+      - "81:8080"
+    volumes:
+      - "./:/mnt"
