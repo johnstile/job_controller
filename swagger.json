@@ -13,7 +13,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1",
+      "url": "http://127.0.0.1/V1",
       "description": "Development server"
     },
     {
@@ -35,12 +35,16 @@
       "description": "Operations about configs"
     },
     {
-      "name": "users",
-      "description": "Operations about user"
-    },
-    {
       "name": "jobs",
       "description": "Operations about jobs"
+    },
+    {
+      "name": "logs",
+      "description": "Operations about logs"
+    },
+    {
+      "name": "users",
+      "description": "Operations about user"
     }
   ],
   "paths": {
@@ -170,10 +174,10 @@
         ],
         "responses": {
           "400": {
-            "description": "Invalid ID supplied"
+            "description": "Station ID Invalid"
           },
           "404": {
-            "description": "Pet not found"
+            "description": "Station ID not found"
           }
         },
         "security": [
