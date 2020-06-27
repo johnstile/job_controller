@@ -15,9 +15,12 @@ This is a Job controller sutie
 ```
 ## Scripts:
 ```.
-setup_python_venv.bash : In development, setup isolated python 
-run_flask_dev.bash     : In development, directlry run flask
+bin/setup_python_venv.bash : In development, setup isolated python 
+bin/run_flask_dev.bash     : In development, directlry run flask
+setup.py                   : Packages src python into pip installable package
 ```
 ## Docker:
 docker-compose.yml     : Runs Docker file, sets up ports, volumes, etc
 Dockerfile.swagger-ui  : Run Swagger-ui to test API
+Dockerfile.web         : Run setup.py and install into Green Unicorn image
+

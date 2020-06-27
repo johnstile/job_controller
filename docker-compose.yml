@@ -10,3 +10,15 @@ services:
       - "81:8080"
     volumes:
       - "./:/mnt"
+
+  web:
+    image: 'johnnywhoops/web:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: 'no' 
+    ports:
+      - "80:80"
+    #volumes:
+    #  - "./src/web:/app"
+
