@@ -9,6 +9,7 @@ from flask import Flask, jsonify, Response, request, abort
 from flask_cors import CORS  # To allow Swagger and other things to work
 import json  # For parsing and creating json
 import uuid  # For unique ids of stations
+from flask_redis import FlaskRedis  # For persistent storage of stations
 
 # My modules
 from .greeting_blueprint import greeting_blueprint
@@ -33,6 +34,11 @@ flog.basicConfig(level=flog.DEBUG)
 
 app = Flask(__name__, static_url_path='')
 
+app.config.from_pyfile(os.path.join(here, 'flask.cfg'))
+
+# Persistent storage for stations
+redis_conn = FlaskRedis(app)
+
 # we have some cross domain stuff behind nginx
 CORS(app)
 
@@ -53,10 +59,11 @@ def load_stations():
     """
     flog.debug(f"Called load_stations")
     stations_file = os.path.join("stations.json")
-    if os.path.exists(stations_file):
-        with open(stations_file, 'r') as fh:
-            return json.load(fh)
+    loaded_stations = redis_conn.get('stations')
+    if loaded_stations:
+        return json.loads(loaded_stations)
     else:
+        # Maybe no stations defined
         return [
             {
                 "ManufacturingSite": "San Dimas, CA",
@@ -73,11 +80,7 @@ def save_stations(stations):
     """
     flog.debug(f"Called save_stations: {stations}")
     try:
-        # redis_conn.set('stations', json.dumps(stations))
-        stations_file = os.path.join("stations.json")
-        with open(stations_file, 'w') as fh:
-            json.dump(stations, fh, sort_keys=True, indent=4, separators=(',', ': '))
-
+        redis_conn.set('stations', json.dumps(stations))
         return {"status": "success"}
     except Exception as e:
         return {"error": str(e)}
@@ -204,9 +207,10 @@ def index():
     return "Hello Job Controller!!"
 
 
-# ------------------------
-# stations routes
-# ------------------------
+# --------------------------------------------
+# STATIONS API: BEGIN
+# --------------------------------------------
+
 @app.route('/stations', methods=['GET'])
 def stations_get():
     """Get stations
@@ -275,3 +279,15 @@ def stations_delete(station_id):
         #     json.dumps({'id': station_id}), mimetype="application/json"), 200
     else:
         abort(409)
+
+# --------------------------------------------
+# STATIONS API: END
+# --------------------------------------------
+
+@app.route('/echo_request')
+def echo_request():
+    """API independent route to ensure things are working"""
+    return jsonify(dict(request.headers))
+
+if __name__ == "__main__":
+    app.run(debug=True, threaded=True, host='0.0.0.0')

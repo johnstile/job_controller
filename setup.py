@@ -14,7 +14,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 install_requires = [
   "Flask>=1.1.1",
-  "Flask-Cors>=3.0.8"
+  "Flask-Cors>=3.0.8",
+  "flask_redis>=0.4.0"
 ] 
 
 setup_requires = []
@@ -57,6 +58,8 @@ setup(
     tests_require=tests_require,
     package_dir={"": "src"},
     packages=find_packages("src"),
+    package_data={'': ['flask.cfg']},
+    include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

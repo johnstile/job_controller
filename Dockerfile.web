@@ -24,6 +24,9 @@ COPY setup.py /code
 
 COPY README.md /code
 
+# NOTE: myapp.py looks for "flask.cfg"
+COPY dev_flask.cfg /code/src/web/flask.cfg
+
 RUN chown -R python:python /code
 
 WORKDIR /code
@@ -38,7 +41,8 @@ FROM tiangolo/meinheld-gunicorn-flask:python3.8-alpine3.11
 
 ENV APP_MODULE="web.myapp:app" \
     PATH="${PATH}:/app/bin" \
-    GUNICORN_CMD_ARGS="--timeout 180"
+    GUNICORN_CMD_ARGS="--timeout 180" \
+    PYTHONPATH=.
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "curl", "-fs", "http://localhost/echo_request", "-o", "/dev/null" ]
 
@@ -52,8 +56,6 @@ RUN rm -f /app/prestart.sh
 RUN mkdir -p /app/job_logs
 
 COPY --from=builder /code/dist/*.whl /packages/
-
-ENV PYTHONPATH=.
 
 # hadolint ignore=DL3013
 RUN apk add --no-cache --virtual .build-deps \
