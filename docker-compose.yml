@@ -20,5 +20,4 @@ services:
     ports:
       - "80:80"
     #volumes:
-    #  - "./src/web:/app"
-
+    # - "./src/web:/app/web"

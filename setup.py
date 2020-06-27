@@ -13,7 +13,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 #    exec(ver_file.read(), version)
 
 install_requires = [
-  "Flask>=1.1.1"
+  "Flask>=1.1.1",
+  "Flask-Cors>=3.0.8"
 ] 
 
 setup_requires = []
