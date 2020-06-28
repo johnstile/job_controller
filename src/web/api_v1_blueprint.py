@@ -3,11 +3,16 @@ REF: https://realpython.com/flask-blueprint/
 REF: https://www.flaskapi.org/api-guide/status-codes/
 """
 
-from flask import Blueprint, current_app, jsonify, Response, request, abort
+from flask import Blueprint, current_app, jsonify, request, abort
 import json  # For parsing and creating json
 import uuid  # For unique ids of stations
 from flask_redis import FlaskRedis  # For persistent storage of stations
+import redis  # for exception handling
 from flask_api import status  # To return named http status codes
+from werkzeug.local import LocalProxy  # Allow logging to app.logger
+from werkzeug.exceptions import HTTPException
+
+logger = LocalProxy(lambda: current_app.logger)  # Allow logging to app.logger
 
 # object name                 (<decor_name>       , <import_name>)
 api_v1_blueprint = Blueprint('api_v1_blueprint', __name__)
@@ -20,135 +25,154 @@ def index():
 
 
 # ---------------------------------------------
-# BEGIN: stations Utility functions
+# STATIONS UTILITY FUNC: BEGIN
 # ---------------------------------------------
 def load_stations():
     """Read stations from storage
     :return: list of dict
     """
-    current_app.logger.debug(f"Called load_stations")
-    # Persistent storage for stations
-    redis_conn = FlaskRedis(current_app)
-    loaded_stations = redis_conn.get('stations')
+    logger.debug(f"Called load_stations")
+    try:
+        # Persistent storage for stations
+        redis_conn = FlaskRedis(current_app)
+        loaded_stations = redis_conn.get('stations')
+        logger.debug(f"loaded_stations: {loaded_stations}")
+    except redis.exceptions.ConnectionError:
+        raise RedisConnectionError(
+            'DataService not accessible',
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
     if loaded_stations:
         return json.loads(loaded_stations)
     else:
-        # Maybe no stations defined
-        return [
-            {
-                "ManufacturingSite": "San Dimas, CA",
-                "JobType": "Being Excellent",
-                "StationID": "666",
-                "NetToSerialMac": "FE:ED:FA:CE:F0:0D"
-            }
-        ]
+        return []
 
 
 def save_stations(stations):
     """Write stations to storage
     :param stations: Json Dict of all stations
     """
-    current_app.logger.debug(f"Called save_stations: {stations}")
+    logger.debug(f"Called save_stations: {stations}")
     try:
         redis_conn = FlaskRedis(current_app)
         redis_conn.set('stations', json.dumps(stations))
-        return {"status": "success"}
-    except Exception as e:
-        return {"error": str(e)}
+    except redis.exceptions.ConnectionError:
+        raise RedisConnectionError(
+            'DataService not accessible',
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    return {"status": "success"}
 
 
-def update_stations(station_id, request_data):
-    """Delete station from stations
+def change_station(station_id, request_data):
+    """Change station from stations
     :param station_id: user defined stationId
     :param request_data: change set object
     :return: string
     """
-    current_app.logger.debug(f"Call update_stations: {station_id}, {request_data}")
+    if not request_data:
+        abort(status.HTTP_400_BAD_REQUEST)
+
+    logger.debug(f"Call change_station: {station_id}, {request_data}")
+    # Prepare change set
+    new_data = json.loads(request_data)
+    # Load old data into structure
+    stations = load_stations()
+
     try:
-        # Prepare change set
-        new_data = json.loads(request_data)
-        # Load old data into structure
-        stations = load_stations()
-        # Find index in list of stations
-        target_index = find_index_in_list_of_dict(
-            lst=stations,
-            key='StationID',
-            value=station_id
-        )
-        if target_index == -1:
-            raise current_app.StationsRequestError
-        stations[target_index] = new_data
-        # save changes
-        save_stations(stations)
-        current_app.logger.info(f"Updated stations index: {target_index}")
-        return_value = 0
+        # Check if the StationID is used by different station
+        if station_id != new_data['StationID']:
+            duplicate_index = find_index_in_list_of_dict(
+                lst=stations,
+                key='StationID',
+                value=new_data['StationID']
+            )
+            if duplicate_index:
+                raise StationsDuplicateError(
+                    'StationId Not Available',
+                    status_code=status.HTTP_409_CONFLICT
+                )
+    except StationsRequestError:
+        logger.debug(f"New StationId Available")
 
-    except Exception as e:
-        current_app.logger.debug(
-            f"Error in update_stations() for id {station_id}. Error:{str(e)}"
-        )
-        return_value = -1
+    # Find index of old StationId
+    target_index = find_index_in_list_of_dict(
+        lst=stations,
+        key='StationID',
+        value=station_id
+    )
+    stations[target_index] = new_data
 
-    return return_value
+    # save changes
+    save_stations(stations)
+    logger.info(f"Updated stations index: {target_index}")
+    return {"status": "success"}
 
 
-def delete_stations(station_id):
+def delete_station(station_id):
     """Delete station from stations
     :param station_id:
     :return: string
     """
-    current_app.logger.debug(f"Call delete_stations: {station_id}")
-    try:
-        # Load old data into structure
-        stations = load_stations()
-        # Find index in list of stations
-        target_index = find_index_in_list_of_dict(
-            lst=stations,
-            key='StationID',
-            value=station_id
-        )
-        if target_index == -1:
-            raise current_app.StationsRequestError
-        # remove from list by index
-        stations.remove(stations[target_index])
-        # save changes
-        save_stations(stations)
-        return_value = 0
+    logger.debug(f"Call delete_stations: {station_id}")
+    # Load old data into structure
+    stations = load_stations()
+    # Find index in list of stations
+    target_index = find_index_in_list_of_dict(
+        lst=stations,
+        key='StationID',
+        value=station_id
+    )
+    # remove from list by index
+    stations.remove(stations[target_index])
+    # save changes
+    save_stations(stations)
 
-    except Exception as e:
-        current_app.logger.error(
-            f"Error in delete_stations for id {station_id}"
-        )
-        current_app.logger.error(f"Error:{str(e)}")
-        return_value = -1
-
-    return return_value
+    return {"status": "success"}
 
 
-def add_stations(request_data):
+def add_station(request_data):
     """Add to stations.json structure
     :param request_data: Json payload data from browser
     """
+    if not request_data:
+        abort(status.HTTP_400_BAD_REQUEST)
+
     # Load old data into structure
     stations = load_stations()
     if 'error' in stations:
-        current_app.logger.info(f"Load Stations Had Error:{stations}")
+        logger.info(f"Load Stations Had Error:{stations}")
 
     # Load http post data into structure
-    data = json.loads(request_data)
+    new_data = json.loads(request_data)
 
     # Sanitize user input
     # Could ensure values are barcode friendly
     # data.update((k, make_code39(v)) for k, v in data.items())
+    # Check if the new StationId is already in use
 
-    current_app.logger.info(f"New Station:{data}")
-    stations.append(data)
+    try:
+        duplicate_index = find_index_in_list_of_dict(
+            lst=stations,
+            key='StationID',
+            value=new_data['StationID']
+        )
+        if duplicate_index:
+            raise StationsDuplicateError(
+                'StationId Not Available',
+                status_code=status.HTTP_409_CONFLICT
+            )
+    except StationsRequestError:
+        logger.debug(f"New StationId Available")
+
+    logger.info(f"New Station:{new_data}")
+    stations.append(new_data)
     for station in stations:
         if 'id' not in station:
             # Add a unique identifier
             station['id'] = str(uuid.uuid4())
 
-    current_app.logger.info("stations:{stations}")
+    logger.info(f"stations:{stations}")
     return save_stations(stations)
 
 
@@ -159,18 +183,23 @@ def find_index_in_list_of_dict(lst, key, value):
     :param value: Value of Dict Key
     :return: int Index
     """
-    current_app.logger.debug(f"Call find_index_in_list_of_dict: {lst}, {value}")
+    logger.debug(f"Call find_index_in_list_of_dict: {lst}, {value}")
     fount_index = -1  # default
     for this_index, lst in enumerate(lst):
         if lst[key] == value:
             fount_index = this_index
             break
-    current_app.logger.debug(f"found_index: {fount_index}")
+    logger.debug(f"found_index: {fount_index}")
+    if fount_index == -1:
+        raise StationsRequestError(
+            'StationId Not Found',
+            status_code=status.HTTP_404_NOT_FOUND
+        )
     return fount_index
 
 
 # ---------------------------------------------
-# BEGIN: stations Utility functions
+# STATIONS UTILITY FUNC: END
 # ---------------------------------------------
 
 # --------------------------------------------
@@ -182,39 +211,18 @@ def stations_get():
     """Get stations
     :return: Json List of Dict
     """
-    current_app.logger.debug("Called stations_get")
-    try:
-        return jsonify(load_stations())
-
-    except Exception as e:
-        response = {'status': 'failure', 'error': str(e)}
-        current_app.logger.error(f"error:{response}")
-        http_code = 400
-
-    return Response(
-        json.dumps(
-            response, sort_keys=True, indent=4, separators=(',', ': ')
-        ),
-        mimetype="application/json"
-    ), http_code
+    logger.debug("Called stations_get")
+    return jsonify(load_stations()), status.HTTP_200_OK
 
 
 @api_v1_blueprint.route('/stations', methods=['POST'])
 def stations_add():
-    """Crate a new station, Return id of added station.
+    """Create new station, Return id of added station.
     :return: Json Dict with id
     """
-    current_app.logger.debug(f"Called stations_add: {request.data}")
-    if not request.data:
-        abort(status.HTTP_409_CONFLICT)
-    try:
-        result = add_stations(request.data)
-        if "success" in result:
-            return result, status.HTTP_201_CREATED
-        else:
-            raise current_app.StationsRequestError
-    except Exception as e:
-        return {'error': str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR
+    logger.debug(f"Called stations_add: {request.data}")
+    result = add_station(request.data)
+    return result, status.HTTP_201_CREATED
 
 
 @api_v1_blueprint.route('/stations/<station_id>', methods=['PUT'])
@@ -223,14 +231,13 @@ def stations_update(station_id):
     :param station_id: String
     :return: Json Dict with id
     """
-    current_app.logger.debug(f"Called stations_update: {station_id}")
+    logger.debug(f"Called stations_update: {station_id}")
+
     if not request.data:
         abort(status.HTTP_409_CONFLICT)
-    result = update_stations(station_id, request.data)
-    if result == -1:
-        abort(status.HTTP_409_CONFLICT)
-    else:
-        return {'id': station_id}, status.HTTP_202_ACCEPTED
+
+    result = change_station(station_id, request.data)
+    return result, status.HTTP_202_ACCEPTED
 
 
 @api_v1_blueprint.route('/stations/<station_id>', methods=['DELETE'])
@@ -240,13 +247,62 @@ def stations_delete(station_id):
     :param station_id: String
     :return: Json Dict with id
     """
-    current_app.logger.debug(f"Called stations_delete: {station_id}")
-    result = delete_stations(station_id)
-    if result != -1:
-        return {'id': station_id}, status.HTTP_202_ACCEPTED
-    else:
-        abort(status.HTTP_409_CONFLICT)
+    logger.debug(f"Called stations_delete: {station_id}")
+    result = delete_station(station_id)
+    return result, status.HTTP_202_ACCEPTED
+
 
 # --------------------------------------------
 # STATIONS API: END
 # --------------------------------------------
+
+# --------------------------------------------
+# Exceptions:
+#  API best practices: servers don't return error stack-trace
+#  exceptions should be handled, and
+#  exception handler makes consistent structured response
+#  - Identify what could go wrong
+#  - Return useful information to the client
+#  - Don't leak too much information
+# --------------------------------------------
+class ApiError(Exception):
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+
+@api_v1_blueprint.errorhandler(ApiError)
+def handle_invalid_usage(error):
+    # pass through HTTP errors
+    if isinstance(error, HTTPException):
+        return error
+
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
+
+class RedisConnectionError(ApiError):
+    """Database Not Accessible"""
+
+
+class StationsError(ApiError):
+    """Base Station Error"""
+
+
+class StationsRequestError(StationsError):
+    """Threat Stack request error."""
+
+
+class StationsDuplicateError(StationsError):
+    """Threat Stack request error."""

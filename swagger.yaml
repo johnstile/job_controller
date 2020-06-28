@@ -55,10 +55,8 @@ paths:
                   "$ref": "#/components/schemas/ArrayOfStations"
         "401":
           $ref: "#/components/responses/AuthorizationError"
-        "422":
-          $ref: "#/components/responses/AuthorizationError"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
       security:
         - api_key: []
     post:
@@ -76,14 +74,16 @@ paths:
       security:
         - api_key: []
       responses:
-        "200":
-          description: A JSON array of station objects
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/responses/SuccessResponse"
-        "405":
-          $ref: "#/components/responses/InvalidInput"
+        "201":
+          $ref: "#/components/responses/Created"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   "/stations/{stationId}":
     put:
       tags:
@@ -100,10 +100,16 @@ paths:
             schema:
               "$ref": "#/components/schemas/PostStations"
       responses:
-        "200":
-          description: successful operation
-          schema:
-            "$ref": "#/components/schemas/ApiResponse"
+        "202":
+          $ref: "#/components/responses/Accepted"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
       security:
         - api_key: []
     delete:
@@ -116,10 +122,14 @@ paths:
       parameters:
         - "$ref": "#/components/parameters/stationIdParam"
       responses:
-        "400":
-          description: Station ID Invalid
+        "202":
+          $ref: "#/components/responses/Accepted"
         "404":
-          description: Station ID not found
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
       security:
         - api_key: []
 components:
@@ -193,6 +203,17 @@ components:
           description: User Status
       xml:
         name: User
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
   responses:
     SuccessResponse:
       type: object
@@ -213,6 +234,20 @@ components:
               message:
                 type: string
             example: { "message": "Token has expired" }
+    Accepted:
+      description: Request accepted
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/responses/SuccessResponse"
+          example: { "code": 202, "message": "Success" }
+    Created:
+      description: Resoure created
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/responses/SuccessResponse"
+          example: { "code": 201, "message": "Success" }
     NotFound:
       description: No matching resource found for the given criteria.
     BadRequestError:
@@ -222,6 +257,18 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
           example: { "code": 400, "message": "Bad Request." }
-    InvalidInput:
-      description: Invalid input.
+    ConflictError:
+      description: Request conflict with current state of the server
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: { "code": 409, "message": "Bad Request." }
+    ServiceUnavailable:
+      description: DataService not accessible
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: { "code": 503, "message": "DataService not accessible" }
 ...
