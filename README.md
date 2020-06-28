@@ -1,7 +1,7 @@
 # Job Controller 
 ```.
-This is a Job controller sutie
-- General idea: web interfaceto run process on remote hosts
+This is a Job controller suite
+- General idea: web interface to run process on remote hosts
 ```
 ## Start it up 
 ```.
@@ -14,7 +14,7 @@ Production:
 ```.
 - Services are run in Docker containers
 - docker-composer will start the containers (There are 2 docker-composer files (Dev,Prod))
--- docker-compose.yml      : Starts everything for produciton
+-- docker-compose.yml      : Starts everything for production
 -- docker-compose-dev.yml  : mounts this directory so changes do not require reload 
 - Description of Services:
 - Nginx    : Proxy requests to static content, redis, and flask
@@ -25,14 +25,14 @@ Production:
 ## Scripts:
 ```.
 bin/setup_python_venv.bash : In development, setup isolated python 
-bin/run_flask_dev.bash     : In development, directlry run flask
-setup.py                   : Packages src python into pip installable package
+bin/run_flask_dev.bash     : In development, directly run flask
+setup.py                   : Packages src python into pip install-able package
 ```
 ## Configs:
 ```.
 Flask config files:
 - dev_flask.cfg  : Development
-- flask.cfg          : Prodiction
+- flask.cfg          : Production
 How used:
 - src/web/myapp.py looks for flask app.conf in 'flask.cfg'
 - Dockerfile.web copies one of these files to src/web/flask.cfg
