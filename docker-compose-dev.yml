@@ -8,6 +8,8 @@ services:
       dockerfile: Dockerfile.swagger-ui
     ports:
       - "81:8080"
+    volumes:
+      - "./:/mnt"
 
   web:
     image: 'johnnywhoops/web:${TAG}'
@@ -19,6 +21,11 @@ services:
       - 'redis'
     ports:
       - "80:80"
+    command:
+      gunicorn --bind="0.0.0.0:80" --workers 2 --timeout 30 --reload --log-level=debug --log-file=- "web.myapp:app"
+    volumes:
+      - ./src/web:/app/web
+
 
   redis:
     image: 'redis:6.0-alpine'

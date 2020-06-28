@@ -3,10 +3,19 @@
 This is a Job controller sutie
 - General idea: web interfaceto run process on remote hosts
 ```
+## Start it up 
+```.
+Development:
+ docker-compose -f  docker-compose-dev.yml  up --build
+Production:
+ docker-compose up --build
+```
 ## Architecture
 ```.
 - Services are run in Docker containers
-- docker-composer will start the containers.
+- docker-composer will start the containers (There are 2 docker-composer files (Dev,Prod))
+-- docker-compose.yml      : Starts everything for produciton
+-- docker-compose-dev.yml  : mounts this directory so changes do not require reload 
 - Description of Services:
 - Nginx    : Proxy requests to static content, redis, and flask
 - Gunicorn : WSGI runner, serving Flask app
