@@ -45,22 +45,22 @@ paths:
       tags:
         - stations
       responses:
-           "200":
-             description: An array of station objects
-             content:
-               application/json:
-                 schema:
-                   type: array
-                   items:
-                     "$ref": "#/components/schemas/ArrayOfStations"
-           "401":
-             $ref: "#/components/responses/AuthorizationError"
-           "422":
-             $ref: "#/components/responses/AuthorizationError"
-           "404":
-             $ref: "#/components/responses/NotFound"
+        "200":
+          description: An array of station objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/ArrayOfStations"
+        "401":
+          $ref: "#/components/responses/AuthorizationError"
+        "422":
+          $ref: "#/components/responses/AuthorizationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
       security:
-      - api_key: []
+        - api_key: []
     post:
       tags:
         - stations
@@ -105,9 +105,7 @@ paths:
           schema:
             "$ref": "#/components/schemas/ApiResponse"
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
+        - api_key: []
     delete:
       tags:
         - stations
@@ -123,9 +121,7 @@ paths:
         '404':
           description: Station ID not found
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
+        - api_key: []
 components:
   parameters:
     stationIdParam:
