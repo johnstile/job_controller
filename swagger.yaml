@@ -1,0 +1,230 @@
+---
+openapi: 3.0.0
+info:
+  title: Job Controller
+  version: 0.0.1
+  description: >-
+    Run, monitor, and view logs from long running processes on remote hosts
+  contact:
+    name: John Stile
+    email: john@stilen.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://127.0.0.1/V1
+    description: Development server
+  - url: https://staging.gigantic-server.com
+    description: Staging server
+  - url: https://api.gigantic-server.com
+    description: Production server
+tags:
+  - name: stations
+    description: >-
+      Station where jobs will run
+  - name: configs
+    description: >-
+      Operations about configs
+  - name: jobs
+    description: >-
+      Operations about jobs
+  - name: logs
+    description: >-
+      Operations about logs
+  - name: users
+    description: >-
+      Operations about user
+paths:
+  "/stations":
+    get:
+      summary: Get a list of stored stations
+      description: >-
+        Returns a list of station type objects, station type objects map
+        a MAC address to alias and other info about where the job will run
+      operationId: getStations
+      tags:
+        - stations
+      responses:
+           "200":
+             description: An array of station objects
+             content:
+               application/json:
+                 schema:
+                   type: array
+                   items:
+                     "$ref": "#/components/schemas/ArrayOfStations"
+           "401":
+             $ref: "#/components/responses/AuthorizationError"
+           "422":
+             $ref: "#/components/responses/AuthorizationError"
+           "404":
+             $ref: "#/components/responses/NotFound"
+      security:
+      - api_key: []
+    post:
+      tags:
+        - stations
+      summary: Add a station
+      operationId: addStation
+      requestBody:
+        description: Station, without unique id produced by server
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PostStations"
+      security:
+        - api_key: []
+      responses:
+        "200":
+          description: A JSON array of station objects
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/responses/SuccessResponse"
+        '405':
+          $ref: "#/components/responses/InvalidInput"
+  "/stations/{stationId}":
+    put:
+      tags:
+        - stations
+      summary: Change a station
+      operationId: updateStation
+      parameters:
+        - "$ref": "#/components/parameters/stationIdParam"
+      requestBody:
+        description: Station, without unique id produced by server
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PostStations"
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            "$ref": "#/components/schemas/ApiResponse"
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+    delete:
+      tags:
+        - stations
+      summary: Deletes a station
+      operationId: deleteStations
+      produces:
+        - application/json
+      parameters:
+        - "$ref": "#/components/parameters/stationIdParam"
+      responses:
+        '400':
+          description: Station ID Invalid
+        '404':
+          description: Station ID not found
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+components:
+  parameters:
+    stationIdParam:
+      name: stationId
+      in: path
+      description: User set Station Identifier
+      required: false
+      type: string
+  schemas:
+    PostStations:
+      type: object
+      properties:
+        ManufacturingSite:
+          description: Physical location of station
+          type: string
+        JobType:
+          description: Type of jobs run on this station
+          type: string
+        StationID:
+          description: Family of jobs run on this station
+          type: string
+        NetToSerialMac:
+          description: MAC address of station Nic
+          type: string
+    ArrayOfStations:
+      type: array
+      items:
+        type: object
+        properties:
+          ManufacturingSite:
+            type: string
+          JobType:
+            type: string
+          StationID:
+            type: string
+          NetToSerialMac:
+            type: string
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+        userStatus:
+          type: integer
+          format: int32
+          description: User Status
+      xml:
+        name: User
+  responses:
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    Updated:
+      description: Resource updated
+    Deleted:
+      description: Resource deleted
+    AuthorizationError:
+      description: Access token is missing, expired, or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+            example: { "message": "Token has expired" }
+    NotFound:
+      description: No matching resource found for the given criteria.
+    BadRequestError:
+      description: Bad Request. Invalid JSON or keys.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: { "code": 400, "message": "Bad Request." }
+    InvalidInput:
+      description: Invalid input.

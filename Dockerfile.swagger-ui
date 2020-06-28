@@ -2,6 +2,6 @@ FROM swaggerapi/swagger-ui
 
 RUN mkdir -p /mnt
 
-COPY swagger.json /mnt/swagger.json 
+COPY swagger.yaml /mnt/swagger.yaml 
 
-ENV SWAGGER_JSON=/mnt/swagger.json 
+ENV SWAGGER_JSON=/mnt/swagger.yaml 

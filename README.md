@@ -7,7 +7,7 @@ This is a Job controller suite
 ```.
 http://127.0.0.1:81/#/
   Swagger-ui
-  Uses swagger.json
+  Uses swagger.yaml
   Can test server side API
 http://127.0.0.1/V1
   Flask App root
