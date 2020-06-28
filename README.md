@@ -10,6 +10,17 @@ Development:
 Production:
  docker-compose up --build
 ```
+## URLs
+```.
+http://127.0.0.1:81/#/
+  Swagger-ui
+  Uses swagger.json
+  Enables user to test the API server side
+http://127.0.0.1/v1
+  Flask APP
+  Directly acces the backend API
+  
+```
 ## Architecture
 ```.
 - Services are run in Docker containers
