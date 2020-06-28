@@ -7,8 +7,7 @@ from flask import Blueprint, current_app, jsonify, Response, request, abort
 import json  # For parsing and creating json
 import uuid  # For unique ids of stations
 from flask_redis import FlaskRedis  # For persistent storage of stations
-
-# from flask_api import status  # To return named http status codes
+from flask_api import status  # To return named http status codes
 
 # object name                 (<decor_name>       , <import_name>)
 api_v1_blueprint = Blueprint('api_v1_blueprint', __name__)
@@ -17,7 +16,7 @@ api_v1_blueprint = Blueprint('api_v1_blueprint', __name__)
 # Add a View
 @api_v1_blueprint.route('/version')
 def index():
-    return {"API Version": "v1"}
+    return {"API Version": "v1"}, status.HTTP_200_OK
 
 
 # ---------------------------------------------
@@ -207,12 +206,15 @@ def stations_add():
     """
     current_app.logger.debug(f"Called stations_add: {request.data}")
     if not request.data:
-        abort(409)
+        abort(status.HTTP_409_CONFLICT)
     try:
         result = add_stations(request.data)
-        return (result, 201)
+        if "success" in result:
+            return result, status.HTTP_201_CREATED
+        else:
+            raise current_app.StationsRequestError
     except Exception as e:
-        return Response(json.dumps({'error': str(e)}), mimetype="application/json"), 500
+        return {'error': str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 @api_v1_blueprint.route('/stations/<station_id>', methods=['PUT'])
@@ -223,12 +225,12 @@ def stations_update(station_id):
     """
     current_app.logger.debug(f"Called stations_update: {station_id}")
     if not request.data:
-        abort(409)
+        abort(status.HTTP_409_CONFLICT)
     result = update_stations(station_id, request.data)
-    if result != -1:
-        return Response(json.dumps({'id': station_id}), mimetype="application/json"), 200
+    if result == -1:
+        abort(status.HTTP_409_CONFLICT)
     else:
-        abort(409)
+        return {'id': station_id}, status.HTTP_202_ACCEPTED
 
 
 @api_v1_blueprint.route('/stations/<station_id>', methods=['DELETE'])
@@ -241,11 +243,9 @@ def stations_delete(station_id):
     current_app.logger.debug(f"Called stations_delete: {station_id}")
     result = delete_stations(station_id)
     if result != -1:
-        return {'id': station_id}
-        # return Response(
-        #     json.dumps({'id': station_id}), mimetype="application/json"), 200
+        return {'id': station_id}, status.HTTP_202_ACCEPTED
     else:
-        abort(409)
+        abort(status.HTTP_409_CONFLICT)
 
 # --------------------------------------------
 # STATIONS API: END

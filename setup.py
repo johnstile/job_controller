@@ -15,7 +15,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 install_requires = [
   "Flask>=1.1.1",
   "Flask-Cors>=3.0.8",
-  "flask_redis>=0.4.0"
+  "flask_redis>=0.4.0",
+  "Flask-API>=2.0"
 ] 
 
 setup_requires = []
