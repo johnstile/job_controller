@@ -25,7 +25,7 @@ COPY setup.py /code
 COPY README.md /code
 
 # NOTE: myapp.py looks for "flask.cfg"
-COPY dev_flask.cfg /code/src/web/flask.cfg
+COPY flask-dev.cfg /code/src/web/flask.cfg
 
 RUN chown -R python:python /code
 

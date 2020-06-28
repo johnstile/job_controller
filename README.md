@@ -33,7 +33,7 @@ setup.py                   : Python setuptools script to package src dir into wh
 ## Configs:
 ```.
 Flask config files:
-- dev_flask.cfg  : Development
+- flask-dev.cfg  : Development
 - flask.cfg      : Production
 How they are used:
 - The flask app (src/web/myapp.py) reads configs from flask.cfg
