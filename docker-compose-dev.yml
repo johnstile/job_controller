@@ -6,8 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.swagger-ui
-    ports:
-      - "81:8080"
+    restart: 'no'
     volumes:
       - "./:/mnt"
 
@@ -19,8 +18,6 @@ services:
     restart: 'no'
     depends_on:
       - 'redis'
-    ports:
-      - "80:80"
     command:
       gunicorn --bind="0.0.0.0:80" --workers 2 --timeout 30 --reload --log-level=debug --log-file=- "web.myapp:app"
     volumes:
@@ -29,10 +26,25 @@ services:
 
   redis:
     image: 'redis:6.0-alpine'
+    restart: 'no'
     ports:
       - '6379:6379'
     volumes:
       - 'redis:/data'
+
+  nginx: 
+    image: 'johnnywhoops/nginx:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    restart: 'no'
+    depends_on:
+      - 'web'
+    env_file:
+      - '.env'
+    ports:
+      - 80:80
+      - 443:443
 
 volumes:
   redis: {}

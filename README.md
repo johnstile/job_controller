@@ -3,14 +3,24 @@
 This is a Job controller suite
 - General idea: web interface to run process on remote hosts
 ```
+## Quick Start
+```.
+Start Dev:
+ docker-compose -f  docker-compose-dev.yml  up --build
+-OR-
+Star Prod:
+ docker-compose up --build
+```
 ## URLs
 ```.
-http://127.0.0.1:81/#/
-  Swagger-ui
-  Uses swagger.yaml
-  Can test server side API
-http://127.0.0.1/V1
-  Flask App root
+Swagger-ui: http://127.0.0.1/api/swagger-ui/
+ Uses swagger.yaml
+ Use to test Flask 
+
+Flask App: http://127.0.0.1
+ e.g. http://127.0.0.1/echo_request 
+ e.g. http://127.0.0.1/V1/version
+
 ```
 ## Architecture
 ```.
@@ -43,8 +53,6 @@ How they are used:
 ```
 ## Docker:
 ```.
-Start Dev: docker-compose -f  docker-compose-dev.yml  up --build
-Star Prod: docker-compose up --build
 Stop:      docker-compose stop
 Files:
 - docker-compose.yml     : Runs Docker file, sets up ports, volumes, etc

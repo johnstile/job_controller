@@ -6,8 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.swagger-ui
-    ports:
-      - "81:8080"
 
   web:
     image: 'johnnywhoops/web:${TAG}'
@@ -17,8 +15,6 @@ services:
     restart: 'no'
     depends_on:
       - 'redis'
-    ports:
-      - "80:80"
 
   redis:
     image: 'redis:6.0-alpine'
@@ -26,6 +22,20 @@ services:
       - '6379:6379'
     volumes:
       - 'redis:/data'
+
+  nginx: 
+    image: 'johnnywhoops/nginx:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    restart: 'no'
+    depends_on:
+      - 'web'
+    env_file:
+      - '.env'
+    ports:
+      - 80:80
+      - 443:443
 
 volumes:
   redis: {}

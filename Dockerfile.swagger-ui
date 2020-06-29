@@ -1,7 +1,11 @@
+
+
+
+
 FROM swaggerapi/swagger-ui
-
 RUN mkdir -p /mnt
+COPY swagger.yaml /mnt/swagger.yaml
+ENV SWAGGER_JSON=/mnt/swagger.yaml
+ENV PORT=80
+ENV BASE_URL "/api/swagger-ui"
 
-COPY swagger.yaml /mnt/swagger.yaml 
-
-ENV SWAGGER_JSON=/mnt/swagger.yaml 
