@@ -1,0 +1,11 @@
+*/__pycache__
+*egg-info
+*.pyc
+Dockerfile
+.dockerignore
+*venv*
+.git
+*Dockerfile*
+*docker-compose*
+*node_modules*
+.idea
