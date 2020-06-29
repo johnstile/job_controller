@@ -58,4 +58,5 @@ Files:
 - docker-compose.yml     : Runs Docker file, sets up ports, volumes, etc
 - Dockerfile.swagger-ui  : Run Swagger-ui to test API
 - Dockerfile.web         : Run setup.py and install into Green Unicorn image
+- Dockerfile.nginx       : Run Nginx and proxy to Green Unicorn and Swagger-ui
 ```

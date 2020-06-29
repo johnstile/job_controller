@@ -13,6 +13,8 @@ services:
       context: .
       dockerfile: Dockerfile.web
     restart: 'no'
+    environment:
+      - BUILD_ENV=RELEASE
     depends_on:
       - 'redis'
 

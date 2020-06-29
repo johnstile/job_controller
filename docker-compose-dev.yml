@@ -18,6 +18,8 @@ services:
     restart: 'no'
     depends_on:
       - 'redis'
+    environment:
+      - BUILD_ENV=DEV
     command:
       gunicorn --bind="0.0.0.0:80" --workers 2 --timeout 30 --reload --log-level=debug --log-file=- "web.myapp:app"
     volumes:
