@@ -7,7 +7,7 @@ web interface to run long-running process on networked hosts
 Start development environment: 
   docker-compose -f  docker-compose-dev.yml up --build
   NOTE: Containers mount this directory, so changes don't require restart
-  
+-OR-
 Star production environment: 
   docker-compose up --build
 
