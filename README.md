@@ -1,34 +1,36 @@
 # Job Controller 
 ```.
-This is a Job controller suite
-- General idea: web interface to run process on remote hosts
+web interface to run long-running process on networked hosts
 ```
 ## Quick Start
 ```.
-Start Dev:
- docker-compose -f  docker-compose-dev.yml  up --build
--OR-
-Star Prod:
- docker-compose up --build
+Start development environment: 
+  docker-compose -f  docker-compose-dev.yml up --build
+  NOTE: Containers mount this directory, so changes don't require restart
+  
+Star production environment: 
+  docker-compose up --build
+
+Stop daemons:
+  docker-compose stop
+
+List running containers:
+  docker container list
 ```
 ## URLs
 ```.
-Swagger-ui: http://127.0.0.1/api/swagger-ui/
- Uses swagger.yaml
- Use to test Flask 
+Swagger-ui  : Usedto test Flask (reads swagger.yaml)
+ URL: http://127.0.0.1/api/swagger-ui/
 
-Flask App: http://127.0.0.1
+Flask App   : Backend, talks to Redis, JobQueue, etc
+ URL: http://127.0.0.1
  e.g. http://127.0.0.1/echo_request 
  e.g. http://127.0.0.1/V1/version
 
 ```
 ## Architecture
 ```.
-- Services are run in Docker containers
-- docker-composer will start the containers (There are 2 docker-composer files (Dev,Prod))
--- docker-compose.yml      : Starts everything for production
--- docker-compose-dev.yml  : mounts this directory so changes do not require reload 
-- Description of Services:
+Description of Services (containers):
 - Nginx    : Proxy requests to static content, redis, and flask
 - Gunicorn : WSGI runner, serving Flask app
 - Flask    : Backend app handles job actions, logs, and talks to redis
@@ -37,8 +39,8 @@ Flask App: http://127.0.0.1
 ## Scripts:
 ```.
 bin/setup_python_venv.bash : In development, setup isolated python 
-bin/run_flask_dev.bash     : In development, run flask server directly
-setup.py                   : Python setuptools script to package src dir into wheel file
+bin/run_flask_dev.bash  : In development, run flask server directly
+setup.py  : Packages pyton source into wheel file for pip install
 ```
 ## Configs:
 ```.
@@ -53,9 +55,9 @@ How they are used:
 ```
 ## Docker:
 ```.
-Stop:      docker-compose stop
 Files:
-- docker-compose.yml     : Runs Docker file, sets up ports, volumes, etc
+- docker-compose-dev.yml : Runs Docker fils, for development 
+- docker-compose.yml     : Runs Docker files, sets up ports, volumes, etc
 - Dockerfile.swagger-ui  : Run Swagger-ui to test API
 - Dockerfile.web         : Run setup.py and install into Green Unicorn image
 - Dockerfile.nginx       : Run Nginx and proxy to Green Unicorn and Swagger-ui
