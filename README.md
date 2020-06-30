@@ -19,7 +19,7 @@ List running containers:
 ```
 ## URLs
 ```.
-Swagger-ui  : Usedto test Flask (reads swagger.yaml)
+Swagger-ui  : Used to test Flask (reads swagger.yaml)
  URL: http://127.0.0.1/api/swagger-ui/
 
 Flask App   : Backend, talks to Redis, JobQueue, etc
