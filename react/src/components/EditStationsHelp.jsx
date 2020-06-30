@@ -12,14 +12,14 @@ import ConfirmIcon from "@material-ui/icons/CheckCircle";
 
 const DirectionsText = () => (
   <Fragment>
-    This manages who can log into tableau_viewer.
+     How to use Edit Stations
     <br />
     <menu>
       Terms:
-      <li>StationID: Serial Number of Station</li>
-      <li>JobType: GENERIC</li>
+      <li>StationID: Name of station Station (S/N)</li>
+      <li>JobType: Kinds of jobs this host can run</li>
       <li>ManufacturingSite: Unique Manufacturing site Location</li>
-      <li>NetToSerialMac: MAC of Network-to-Serial attache to DUT</li>
+      <li>NetToSerialMac: MAC of Station</li>
     </menu>
     <menu>
       Actions:
