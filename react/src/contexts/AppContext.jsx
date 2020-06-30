@@ -11,7 +11,7 @@ function AppContextProvider({ children }) {
   const defaultContext = {
     message,
     setMessage,
-    stations,
+    stations
   };
 
   return (

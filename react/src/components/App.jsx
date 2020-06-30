@@ -8,6 +8,8 @@ import Typography from "@material-ui/core/Typography";
 import Paper from "@material-ui/core/Paper";
 import _ from "lodash";
 import MessageBar from "./MessageBar";
+import AppMenu from "./AppMenu";
+import EditStations from "./EditStations";
 import Iframe from "react-iframe";
 
 const styles = theme => ({
@@ -46,15 +48,19 @@ const App = ({ classes }) => {
       <div className={classes.App}>
         <AppBar position="static">
           <Toolbar>
+            <AppMenu />
             <Typography variant="h6" color="inherit" className={classes.grow}>
-              Job Controller 
+              Job Controller
             </Typography>
           </Toolbar>
         </AppBar>
         <Paper width={1} className={classes.content} elevation={0}>
           <Switch>
             <Route exact path="/">
-              Hello React 
+              DEFAULT
+            </Route>
+            <Route exact path="/edit_stations">
+              <EditStations />
             </Route>
           </Switch>
         </Paper>

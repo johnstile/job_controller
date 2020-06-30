@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 // WEB API route for stations
-const routeStations = "/stations";
+const routeStations = "/V1/stations";
 
 //-------------------------------------------
 // Supporting functions
@@ -43,7 +43,7 @@ const onStationsListEdit = (setMessage, changeset) => {
   }
   // Commit change to server
   axios
-    .put(routeStations + "/" + changeset.id, changeset)
+    .put(routeStations + "/" + changeset.StationID, changeset)
     .then(() => {
       const msg = "Station Edit Successful";
       setMessage({ variant: "success", content: msg });
@@ -60,7 +60,7 @@ const onStationsListRemove = (setMessage, changeset) => {
   console.log("onStationsListRemove");
   console.log("changeset: " + JSON.stringify(changeset));
   axios
-    .delete(routeStations + "/" + changeset.id)
+    .delete(routeStations + "/" + changeset.StationID)
     .then(() => {
       const msg = "Station Remove Successful";
       setMessage({ variant: "success", content: msg });

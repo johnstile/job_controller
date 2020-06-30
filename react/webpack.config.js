@@ -42,7 +42,7 @@ module.exports = {
     hot: true,
     historyApiFallback: true,
     proxy: {
-      "/stations": {
+      "/V1/stations": {
         target: "http://localhost",
         changeOrigin: true
       }
