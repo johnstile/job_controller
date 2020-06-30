@@ -1,13 +1,39 @@
 #
-# build image for nginx
-# Static files will go into /usr/share/nginx/html
+# build image for nginx and react app
+# 1. uses the node image to build my react app
+# 2. copy static files into /usr/share/nginx/html
+# 3. copy nginx.conf
 #
+
+# build environment
+
+FROM node:8-alpine as node-builder
+
+RUN apk add --no-cache git
+
+RUN mkdir -p /usr/src/app
+
+WORKDIR /usr/src/app
+
+ENV PATH /usr/src/app/node_modules/.bin:$PATH
+
+COPY react/package.json /usr/src/app/package.json
+
+RUN npm install
+
+COPY react/ /usr/src/app
+
+RUN npm run build
+
+# production environment
 
 FROM nginx:1.19-alpine
 
 ADD "nginx/nginx.conf" "/etc/nginx/nginx.conf"
 
 RUN apk add --no-cache ca-certificates
+
+COPY --from=node-builder /usr/src/app/dist /usr/share/nginx/html
 
 CMD ["nginx", "-g", "daemon off;"]
 

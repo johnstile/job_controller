@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import { AppContext } from "../contexts/AppContext";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import withStyles from "@material-ui/core/styles/withStyles";
@@ -6,11 +6,9 @@ import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import Paper from "@material-ui/core/Paper";
-import _ from "lodash";
 import MessageBar from "./MessageBar";
 import AppMenu from "./AppMenu";
 import EditStations from "./EditStations";
-import Iframe from "react-iframe";
 
 const styles = theme => ({
   App: {

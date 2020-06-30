@@ -1,0 +1,60 @@
+#
+# Notes project maintenance
+#
+# REF: https://docs.npmjs.com/uninstalling-packages-and-dependencies
+#
+# ------------------
+# 20200630: jstile
+# update
+
+npm update
+
+#
+# Outdated project packages should be empty
+#
+npm outdated
+
+Package                    Current  Wanted  Latest  Location
+babel-preset-react-app       7.0.2   7.0.2   9.1.2  job_controller
+eslint                      5.16.0  5.16.0   7.3.1  job_controller
+eslint-config-prettier       4.3.0   4.3.0  6.11.0  job_controller
+eslint-config-standard      12.0.0  12.0.0  14.1.1  job_controller
+eslint-plugin-node           9.2.0   9.2.0  11.1.0  job_controller
+eslint-plugin-react-hooks    1.7.0   1.7.0   4.0.5  job_controller
+file-loader                  4.3.0   4.3.0   6.0.0  job_controller
+html-loader                  0.5.5   0.5.5   1.1.0  job_controller
+html-webpack-plugin          3.2.0   3.2.0   4.3.0  job_controller
+prettier                    1.19.1  1.19.1   2.0.5  job_controller
+react-spinners               0.6.1   0.6.1   0.9.0  job_controller
+url-loader                   2.3.0   2.3.0   4.1.0  job_controller
+
+#
+# Global packages need to be updated
+#
+npm outdated -g --depth=0
+
+Package                        Current  Wanted    Latest  Location
+@angular-devkit/build-angular    0.7.5   0.7.5  0.1000.0  global
+@angular/cli                     6.1.5   6.2.9    10.0.0  global
+cordova                          5.4.1   5.4.1     9.0.0  global
+create-react-app                 1.5.2   1.5.2     3.4.1  global
+eslint                           5.6.1  5.16.0     7.3.1  global
+generate-github-markdown-css     2.0.0   2.2.0     4.0.0  global
+gh-pages                         2.0.0   2.2.0     3.1.0  global
+grunt-cli                       0.1.13  0.1.13     1.3.2  global
+npm                             6.13.4  6.14.5    6.14.5  global
+prettier                        1.14.3  1.19.1     2.0.5  global
+typescript                       3.0.3   3.9.5     3.9.5  global
+
+# DANGER: this removed npm from my system
+# DANGER:  sudo npm update -g
+#
+
+# DID NOT FIX: Reinstall from web script
+# DOD NOT FIX:   curl -L https://npmjs.org/install.sh | sh
+
+# FIX: Reinstall with gentoo pakcage NodeJs
+# FIX:   sudo emerge NodeJs
+
+# Status: update still an issue
+# ------------------
