@@ -4,6 +4,8 @@ web interface to run long-running process on networked hosts
 ```
 ## Quick Start
 ```.
+Start dockerd: 
+  sudo /etc/init.d/docker start
 Start development environment: 
   docker-compose -f  docker-compose-dev.yml up --build
   NOTE: Containers mount this directory, so changes don't require restart
@@ -26,6 +28,13 @@ Flask App   : Backend, talks to Redis, JobQueue, etc
  URL: http://127.0.0.1
  e.g. http://127.0.0.1/echo_request 
  e.g. http://127.0.0.1/V1/version
+
+```
+## React Development 
+```.
+cd react
+npm install
+npm run start
 
 ```
 ## Architecture
@@ -62,3 +71,13 @@ Files:
 - Dockerfile.web         : Run setup.py and install into Green Unicorn image
 - Dockerfile.nginx       : Run Nginx and proxy to Green Unicorn and Swagger-ui
 ```
+## WEB APP Structure:
+```.
+App state in react/context
+App components in react/components
+Projcect files:
+ .eslintrc.json
+ package.json
+ package-lock.json
+ webpack.config.js
+
