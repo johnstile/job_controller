@@ -21,6 +21,9 @@ List running containers:
 ```
 ## URLs
 ```.
+Swagger-editor : Used to edit Swagger/OAS contract (edits swagger.yaml)
+ URL: http://127.0.0.1/api/swagger-editor
+
 Swagger-ui  : Used to test Flask (reads swagger.yaml)
  URL: http://127.0.0.1/api/swagger-ui/
 

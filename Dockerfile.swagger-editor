@@ -1,0 +1,12 @@
+
+
+
+
+FROM swaggerapi/swagger-editor
+#RUN mkdir -p /mnt
+#COPY swagger.yaml /mnt/swagger.yaml
+ENV SWAGGER_FILE="/mnt/swagger.yaml"
+EXPOSE 8080
+ENV PORT=8080
+#ENV BASE_URL "/api/swagger-editor"
+

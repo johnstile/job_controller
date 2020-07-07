@@ -1,6 +1,15 @@
 version: '3.7'
 services:
 
+  swagger-editor:
+    image: 'johnnywhoops/swagger-editor:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.swagger-editor
+    restart: 'no'
+    volumes:
+      - "./:/mnt"
+
   swagger-ui:
     image: 'johnnywhoops/swagger-ui:${TAG}'
     build:
