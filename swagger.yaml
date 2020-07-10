@@ -19,6 +19,9 @@ servers:
   - url: https://api.gigantic-server.com
     description: Production server
 tags:
+  - name: auth
+    description: >-
+      Operations about authentication
   - name: stations
     description: >-
       Station where jobs will run
@@ -35,6 +38,60 @@ tags:
     description: >-
       Operations about user
 paths:
+  "/login":
+    post:
+      tags:
+        - auth
+      summary: Authenticate user
+      description: >-
+        On successful Login,
+        <br>1) copy the "Response body",
+        <br>2) Click "Authorize" in upper right of this interface,
+        <br>3) Paste the copied body into the form that pops up
+        <br>4) Now protected routes will work (the lock will show unlocked)
+      operationId: postLogin
+      requestBody:
+        description: Authentication credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PostAuth"
+      security:
+        - api_key: []
+      responses:
+        "202":
+          $ref: "#/components/auth/Created"
+        "401":
+          $ref: "#/components/auth/BadRequestError"
+        "403":
+          $ref: "#/components/auth/NotFound"
+        "503":
+          $ref: "#/components/auth/ServiceUnavailable"
+  "/auth_check":
+    get:
+      summary: Get current credentials
+      description: >-
+        Requires a valid JWT for HTTP 200.
+        Returns authenticated user and claims as json
+      operationId: getStations
+      tags:
+        - auth
+      responses:
+        "200":
+          description: An Object with credentials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/AuthCheck"
+        "401":
+          $ref: "#/components/responses/AuthorizationError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      security:
+        - bearerAuth: []
   "/stations":
     get:
       summary: Get a list of stored stations
@@ -141,6 +198,25 @@ components:
       required: false
       type: string
   schemas:
+    PostAuth:
+      type: object
+      properties:
+        username:
+          description: User Name
+          type: string
+        password:
+          description: User Password
+          type: string
+      example: {"username": "john", "password": "password"}
+    AuthCheck:
+      type: object
+      properties:
+        user:
+          description: User Name
+          type: string
+        claims:
+          description: User Permissions
+          type: string
     PostStations:
       type: object
       properties:
@@ -271,4 +347,10 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
           example: { "code": 503, "message": "DataService not accessible" }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
 ...
