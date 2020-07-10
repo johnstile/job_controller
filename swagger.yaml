@@ -91,6 +91,7 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       security:
+        - {}
         - bearerAuth: []
   "/stations":
     get:

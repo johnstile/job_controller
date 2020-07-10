@@ -12,13 +12,20 @@ from flask_api import status  # To return named http status codes
 from werkzeug.local import LocalProxy  # Allow logging to app.logger
 from werkzeug.exceptions import HTTPException
 
-logger = LocalProxy(lambda: current_app.logger)  # Allow logging to app.logger
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token, create_refresh_token,
+    get_jwt_identity, get_jwt_claims
+)
 
-# object name                 (<decor_name>       , <import_name>)
+# Allow logging to app.logger
+logger = LocalProxy(lambda: current_app.logger)
+
+# object name                 (<decor_name>    , <import_name>)
 api_v1_blueprint = Blueprint('api_v1_blueprint', __name__)
 
+jwt = JWTManager()
 
-# Add a View
+
 @api_v1_blueprint.route('/version')
 def index():
     return {"API Version": "v1"}, status.HTTP_200_OK
@@ -201,7 +208,74 @@ def find_index_in_list_of_dict(lst, key, value):
 # ---------------------------------------------
 # STATIONS UTILITY FUNC: END
 # ---------------------------------------------
+# ---------------------------------------------
+# AUTHENTICATION UTILITY FUNC: BEGIN
+# ---------------------------------------------
 
+
+def authenticate_user(username, password):
+    """Determine if this is a valid user
+    :param username: string
+    :param password: string
+    :return: backendError | authError | Authorized
+    """
+    # TODO: Choose storage solution backend
+    logger.debug(
+        f"username:{username}, password:{password}"
+    )
+    responses = ["backendError", "authError", "Authorized"]
+    return responses[2]
+
+
+class User:
+    """Data stuffed in JWT Bearer"""
+
+    def __init__(self, username):
+        self.username = username
+        self.admin = 0
+
+    def to_json(self):
+        """In Python3:  jwt.encode fails with:
+          "Object of type 'bytes' is not JSON serializable"
+        """
+        return json.dumps(self, default=lambda o: o.__dict__)
+
+    def __str__(self):
+        return (
+            (
+                "username:{},"
+                "admin:{}"
+            ).format(
+                self.username,
+                self.admin
+            )
+        )
+
+
+@jwt.user_claims_loader
+def user_claims_loader(user):
+    """Called when create_access_token is used
+    Returns custom claims added to token
+    """
+    logger.debug(f"Called user_claims_loader: {user}")
+    # TODO:  Figure out storage solution backend
+    # Use dummy for now
+    return {'admin': 0}
+
+
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    """Called when create_access_token is used.
+    Returns identity in the token
+    of the access token should be.
+    """
+    logger.debug(f"Called user_identity_lookup. username:{user.username}")
+    return user.username
+
+
+# ---------------------------------------------
+# AUTHENTICATION UTILITY FUNC: END
+# ---------------------------------------------
 # --------------------------------------------
 # STATIONS API: BEGIN
 # --------------------------------------------
@@ -255,7 +329,62 @@ def stations_delete(station_id):
 # --------------------------------------------
 # STATIONS API: END
 # --------------------------------------------
+# --------------------------------------------
+# AUTHENTICATION API: BEGIN
+# --------------------------------------------
 
+
+@api_v1_blueprint.route('/login', methods=['POST'])
+def login():
+    """Login will create a token"""
+    logger.debug(f"Calling Login: {request.json}")
+
+    if not request.is_json:
+        abort(status.HTTP_401_UNAUTHORIZED, description="Missing all")
+
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    if not username:
+        abort(status.HTTP_401_UNAUTHORIZED, description="Missing username")
+    if not password:
+        abort(status.HTTP_401_UNAUTHORIZED, description="Missing password")
+
+    result = authenticate_user(username, password)
+    logger.debug(f"result:{result}")
+
+    # backend service failure
+    if 'backendError' in result:
+        abort(status.HTTP_503_SERVICE_UNAVAILABLE, description="Failed lookup")
+
+    # Failed auth
+    if 'authError' in result:
+        abort(status.HTTP_403_FORBIDDEN, description="Bad username or password")
+
+    # Generate Token
+    user = User(username)
+    # Python3:  jwt.encode fails with “Object of type 'bytes' is not JSON serializable”
+    user_json = user.to_json()
+    ret = {
+        'access_token': create_access_token(identity=user_json, fresh=True),
+        'refresh_token': create_refresh_token(identity=user_json),
+    }
+    return ret, status.HTTP_202_ACCEPTED
+
+
+@api_v1_blueprint.route('/auth_check', methods=['GET'])
+@jwt_required
+def protected():
+    """Use to check if the browsers token is valid"""
+    # Access the identity of the current user with get_jwt_identity
+    logger.info(f"Called protected: headers: {request.headers}")
+    user = get_jwt_identity()
+    claims = get_jwt_claims()
+    return {"user": user, "claims": claims}, status.HTTP_202_ACCEPTED
+
+
+# --------------------------------------------
+# AUTHENTICATION API: END
+# --------------------------------------------
 # --------------------------------------------
 # Exceptions:
 #  API best practices: servers don't return error stack-trace

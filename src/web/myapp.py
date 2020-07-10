@@ -8,12 +8,21 @@ import os
 import logging
 from flask import Flask, jsonify, Response, request, abort
 from flask_cors import CORS  # To allow Swagger and other things to work
+import datetime
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token, create_refresh_token,
+    get_jwt_identity, jwt_optional, get_jwt_claims
+)
 
 # My API Versions
-from .api_v1_blueprint import api_v1_blueprint
+from .api_v1_blueprint import jwt, api_v1_blueprint
+
 
 here = os.path.dirname(__file__)
 app = Flask(__name__, static_url_path='')
+
+jwt = JWTManager()
+jwt.init_app(app)
 
 # Register root logger, so blueprint can send logs
 # Log Level:  basicConfig: my python, werkzeug: all requests

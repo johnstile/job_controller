@@ -5,7 +5,11 @@ web interface to run long-running process on networked hosts
 ## Quick Start
 ```.
 Start dockerd: 
-  sudo /etc/init.d/docker start
+  systemd:
+    sudo service docker start
+  openrc:
+    sudo /etc/init.d/docker start
+
 Start development environment: 
   docker-compose -f  docker-compose-dev.yml up --build
   NOTE: Containers mount this directory, so changes don't require restart
@@ -21,14 +25,16 @@ List running containers:
 ```
 ## URLs
 ```.
-Swagger-editor : Used to edit Swagger/OAS contract (edits swagger.yaml)
- URL: http://127.0.0.1/api/swagger-editor
+Flask App   : Access React front end 
+ URL: http://127.0.0.1
 
-Swagger-ui  : Used to test Flask (reads swagger.yaml)
+Swagger-ui  : Used to test API (reads swagger.yaml)
  URL: http://127.0.0.1/api/swagger-ui/
 
+Swagger-editor : Used to edit swagger.yaml
+ URL: http://127.0.0.1/api/swagger-editor
+
 Flask App   : Backend, talks to Redis, JobQueue, etc
- URL: http://127.0.0.1
  e.g. http://127.0.0.1/echo_request 
  e.g. http://127.0.0.1/V1/version
 
@@ -38,7 +44,16 @@ Flask App   : Backend, talks to Redis, JobQueue, etc
 cd react
 npm install
 npm run start
+Access via: http://127.0.0.1:8080
 
+```
+## Flask Development 
+```.
+./bin/setup_python_venv.bash
+./bin/run_flask_dev.bash
+Start IDE
+Pyhton code under src
+Access via: http://127.0.0.1:5000
 ```
 ## Architecture
 ```.
@@ -71,6 +86,7 @@ Files:
 - docker-compose-dev.yml : Runs Docker fils, for development 
 - docker-compose.yml     : Runs Docker files, sets up ports, volumes, etc
 - Dockerfile.swagger-ui  : Run Swagger-ui to test API
+- Dockerfile.swagger-editor : Run Swagger-edit
 - Dockerfile.web         : Run setup.py and install into Green Unicorn image
 - Dockerfile.nginx       : Run Nginx and proxy to Green Unicorn and Swagger-ui
 ```
