@@ -10,36 +10,56 @@ Start dockerd:
   openrc:
     sudo /etc/init.d/docker start
 
-Start development environment: 
+Start development container environment: 
   docker-compose -f  docker-compose-dev.yml up --build
   NOTE: Containers mount this directory, so changes don't require restart
 -OR-
-Star production environment: 
+Star production container environment: 
   docker-compose up --build
 
-Stop daemons:
+Stop container minions:
   docker-compose stop
 
 List running containers:
-  docker container list
+  docker container list -a
+
+List images:
+  docker image list -a
+
+Debugging: connect to running container:
+  docker exec -it <container name> sh
+
+Inspect Dockerd resource management:
+  docker system df -v
+
+List Running services:
+  docker system ps 
+
+List Dead and Running services:
+  # Handy if you want to run and connect to a dead container
+  docker system ps -a
+
 ```
-## URLs
+## Container URLs
 ```.
-Flask App   : Access React front end 
+Nginx   : Routes all external requests 
  URL: http://127.0.0.1
 
-Swagger-ui  : Used to test API (reads swagger.yaml)
+UI App   : React front end 
+ URL: http://127.0.0.1/
+
+Backend App   : Flask app, talks to Redis, JobQueue, etc
+ e.g. http://127.0.0.1/echo_request 
+ e.g. http://127.0.0.1/V1/version
+
+Swagger-ui  : To test backend via API (reads swagger.yaml)
  URL: http://127.0.0.1/api/swagger-ui/
 
 Swagger-editor : Used to edit swagger.yaml
  URL: http://127.0.0.1/api/swagger-editor
 
-Flask App   : Backend, talks to Redis, JobQueue, etc
- e.g. http://127.0.0.1/echo_request 
- e.g. http://127.0.0.1/V1/version
-
 ```
-## React Development 
+## React Local Development 
 ```.
 cd react
 npm install
@@ -47,7 +67,7 @@ npm run start
 Access via: http://127.0.0.1:8080
 
 ```
-## Flask Development 
+## Flask Local Development 
 ```.
 ./bin/setup_python_venv.bash
 ./bin/run_flask_dev.bash
@@ -58,16 +78,16 @@ Access via: http://127.0.0.1:5000
 ## Architecture
 ```.
 Description of Services (containers):
-- Nginx    : Proxy requests to static content, redis, and flask
+- Nginx    : Proxy requests to static content, Redis, and Flask
 - Gunicorn : WSGI runner, serving Flask app
-- Flask    : Backend app handles job actions, logs, and talks to redis
-- Redis    : Some persistant storage and RedisRQ job queue
+- Flask    : Backend app handles job actions, logs, and talks to Redis
+- Redis    : Some persistent storage and RedisRQ job queue
 ```
 ## Scripts:
 ```.
 bin/setup_python_venv.bash : In development, setup isolated python 
 bin/run_flask_dev.bash  : In development, run flask server directly
-setup.py  : Packages pyton source into wheel file for pip install
+setup.py  : Packages python source into wheel file for pip install
 ```
 ## Configs:
 ```.
@@ -94,7 +114,7 @@ Files:
 ```.
 App state in react/context
 App components in react/components
-Projcect files:
+Project files:
  .eslintrc.json
  package.json
  package-lock.json
