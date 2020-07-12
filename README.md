@@ -79,16 +79,16 @@ IDE setup: VS Code:
 Launch VS Code:
 1. Install extension: settings sync
  -> I setup a private gist, and configured plugin to use it.
- -> This should install all the python, pylint, react, eslint settings
+ -> This should install all the Extensions (python, pylint, react, eslint)
  --> The gist is named "cloudSettings"
  ---> TODO: Test simulated sharing with a Team Mate, and stor in this repo
  ---> Access settings: <ctrl>-<shift>-p, type: sync settings 
 
 2. File -> Open Directory -> <top of working copy directory> 
-  Open src/web/myapp.py (this activates the pytohn plugin)
-  Bottom blue bar shuld show the isolated python interpreter 
+  Open src/web/myapp.py (this activates the python plugin)
+  Bottom blue bar should show the isolated python interpreter 
 
-3. During Initial projct setup, I created a run config (.vscode/launch.json)
+3. During Initial project setup, I created a run config (.vscode/launch.json)
   Steps followed:
     Click Bug tab on the left
     Run-> Open Configurations -> Flask -> Enter path to flask app: src/web/myapp.py
