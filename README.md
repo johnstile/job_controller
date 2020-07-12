@@ -67,13 +67,45 @@ npm run start
 Access via: http://127.0.0.1:8080
 
 ```
-## Flask Local Development 
+## Flask Local Development  (non-docker)
 ```.
-./bin/setup_python_venv.bash
-./bin/run_flask_dev.bash
-Start IDE
-Pyhton code under src
-Access via: http://127.0.0.1:5000
+Initial setup, create isolated python environment
+ sudo apt-get install python3-venv
+ python3 -m venv venv
+ . venv/bin/activate
+ pip install -r pip_requirements.txt
+
+IDE setup: VS Code:
+Launch VS Code:
+1. Install extension: settings sync
+ -> I setup a private gist, and configured plugin to use it.
+ -> This should install all the python, pylint, react, eslint settings
+ --> The gist is named "cloudSettings"
+ ---> TODO: Test simulated sharing with a Team Mate, and stor in this repo
+ ---> Access settings: <ctrl>-<shift>-p, type: sync settings 
+
+2. File -> Open Directory -> <top of working copy directory> 
+  Open src/web/myapp.py (this activates the pytohn plugin)
+  Bottom blue bar shuld show the isolated python interpreter 
+
+3. During Initial projct setup, I created a run config (.vscode/launch.json)
+  Steps followed:
+    Click Bug tab on the left
+    Run-> Open Configurations -> Flask -> Enter path to flask app: src/web/myapp.py
+      Creates .vscode/launch.json
+  
+  To run on local flask server: 
+    Run -> Start without debugging
+    This launches flask dev server on http://127.0.0.1:5000/
+    In a browser visit: http://127.0.0.1:5000/echo_request
+
+  To run debug on local flask server: 
+    Add break point to some route, by clicking to the right of line number.
+      (e.g. src/web/myapp.py, in echo_request(), next to the return. )
+    Run -> Start Debugging
+    This launches flask dev server on http://127.0.0.1:5000/
+    In a browser visit: http://127.0.0.1:5000/echo_request
+    You should see the break point hit, and can inspect. 
 ```
 ## Architecture
 ```.
