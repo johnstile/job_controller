@@ -63,7 +63,7 @@ const App = ({ classes }) => {
               <Typography variant="h6" color="inherit" className={classes.grow}>
                 Job Controller
               </Typography>
-              <Button color="inherit" onClick={auth.onLogoutSubmit}>
+              <Button color="inherit" onClick={auth.logout}>
                 Logout
               </Button>
             </Toolbar>
