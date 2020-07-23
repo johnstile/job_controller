@@ -5,10 +5,13 @@ web interface to run long-running process on networked hosts
 ## Quick Start
 ```.
 Start dockerd: 
-  systemd:
-    sudo service docker start
-  openrc:
-    sudo /etc/init.d/docker start
+ For sysv init:
+ sudo service systemd restart
+ For Systemd
+ sudo systemctl start docker
+ For OpenRc
+ sudo /etc/init.d/docker start
+
 
 Start development container environment: 
   docker-compose -f  docker-compose-dev.yml up --build

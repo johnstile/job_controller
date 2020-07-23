@@ -232,25 +232,8 @@ class User:
 
     def __init__(self, username):
         self.username = username
-        self.admin = 0
-
-    def to_json(self):
-        """In Python3:  jwt.encode fails with:
-          "Object of type 'bytes' is not JSON serializable"
-        """
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    def __str__(self):
-        return (
-            (
-                "username:{},"
-                "admin:{}"
-            ).format(
-                self.username,
-                self.admin
-            )
-        )
-
+        self.admin = True
+        self.job_limit = 2
 
 @jwt.user_claims_loader
 def user_claims_loader(user):
@@ -260,7 +243,7 @@ def user_claims_loader(user):
     logger.debug(f"Called user_claims_loader: {user}")
     # TODO:  Figure out storage solution backend
     # Use dummy for now
-    return {'admin': 0}
+    return {'admin': True, 'job_limit':2 }
 
 
 @jwt.user_identity_loader
@@ -363,7 +346,7 @@ def login():
     # Generate Token
     user = User(username)
     # Python3:  jwt.encode fails with “Object of type 'bytes' is not JSON serializable”
-    user_json = user.to_json()
+    user_json = json.dumps(user.__dict__) 
     ret = {
         'access_token': create_access_token(identity=user_json, fresh=True),
         'refresh_token': create_refresh_token(identity=user_json),

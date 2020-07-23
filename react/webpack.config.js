@@ -45,6 +45,10 @@ module.exports = {
       "/V1/stations": {
         target: "http://localhost",
         changeOrigin: true
+      },
+      "/V1/login": {
+        target: "http://localhost",
+        changeOrigin: true
       }
     }
   }
