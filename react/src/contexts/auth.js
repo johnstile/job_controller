@@ -30,12 +30,6 @@ const onLoginSubmit = (event, setAuthUser, setMessage) => {
 const onLoginSuccess = (response, setAuthUser, setMessage) => {
   const accessToken = response.data.access_token;
 
-  // QUESTION: Am I setting the cookie before checking for a good reason?
-  Cookies.set(
-    "access_token",
-    accessToken //{ secure: true}
-  );
-
   if (!accessToken) {
     setMessage({ variant: "error", content: "No Cookie!" });
     return;
@@ -45,6 +39,11 @@ const onLoginSuccess = (response, setAuthUser, setMessage) => {
     setMessage({ variant: "error", content: validation.msg });
     return;
   }
+
+  Cookies.set(
+    "access_token",
+    accessToken //{ secure: true}
+  );
 
   //
   // QUESTION: How can I make this global, for on server calls.
@@ -58,6 +57,7 @@ const getJwtTokenClaims = (token, setAuthUser) => {
   try {
     const decoded = decode(token);
     setAuthUser(decoded.identity);
+    console.log(decoded.identity);
     return true;
   } catch (err) {
     return false;
@@ -108,8 +108,13 @@ const useAuth = setMessage => {
   // QUESTION:  When I hvae a cookie, this isn't preventing the login
   //
   useEffect(() => {
-    console.log("Loading Cookies");
-    setAuthUser(Cookies.get("access_token"));
+    const token = Cookies.get("access_token");
+    if (token) {
+      const decoded = decode(token);
+      const authUser = decoded.identity;
+      setAuthUser(authUser);
+      console.log(authUser);
+    }
   }, []);
 
   const login = event => {

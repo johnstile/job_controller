@@ -227,23 +227,31 @@ def authenticate_user(username, password):
     return responses[2]
 
 
-class User:
+class UserObject:
     """Data stuffed in JWT Bearer"""
-
-    def __init__(self, username):
+    def __init__(self, username, roles):
         self.username = username
-        self.admin = True
-        self.job_limit = 2
+        self.roles = roles
+
+    def serialize(self):
+        """
+        Python3 classes can't be serialized
+        This operates correctly
+        REF: https://stackoverflow.com/questions/21411497/flask-jsonify-a-list-of-objects 
+        """
+        return {
+            'username': self.username,
+            'roles': self.roles 
+        }
+
 
 @jwt.user_claims_loader
-def user_claims_loader(user):
+def add_claims_to_access_token(user):
     """Called when create_access_token is used
     Returns custom claims added to token
     """
     logger.debug(f"Called user_claims_loader: {user}")
-    # TODO:  Figure out storage solution backend
-    # Use dummy for now
-    return {'admin': True, 'job_limit':2 }
+    return {'roles': user.roles}
 
 
 @jwt.user_identity_loader
@@ -344,13 +352,12 @@ def login():
         abort(status.HTTP_403_FORBIDDEN, description="Bad username or password")
 
     # Generate Token
-    user = User(username)
+    user = UserObject(username=username, roles=['admin', 'user'])
     # Python3:  jwt.encode fails with “Object of type 'bytes' is not JSON serializable”
-    user_json = json.dumps(user.__dict__) 
-    ret = {
-        'access_token': create_access_token(identity=user_json, fresh=True),
-        'refresh_token': create_refresh_token(identity=user_json),
-    }
+    # This method returns a dict of the class, which works
+    access_token = create_access_token(identity=user.serialize())
+    ret = {'access_token': access_token}
+
     return ret, status.HTTP_202_ACCEPTED
 
 

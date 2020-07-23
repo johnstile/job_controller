@@ -7,6 +7,8 @@ import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import Paper from "@material-ui/core/Paper";
+import Button from "@material-ui/core/Button";
+
 import MessageBar from "./MessageBar";
 import AppMenu from "./AppMenu";
 import EditStations from "./EditStations";
@@ -61,6 +63,9 @@ const App = ({ classes }) => {
               <Typography variant="h6" color="inherit" className={classes.grow}>
                 Job Controller
               </Typography>
+              <Button color="inherit" onClick={auth.onLogoutSubmit}>
+                Logout
+              </Button>
             </Toolbar>
           </AppBar>
           <Paper width={1} className={classes.content} elevation={0}>
