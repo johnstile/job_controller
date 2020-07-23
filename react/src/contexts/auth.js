@@ -90,8 +90,10 @@ const onAuthCheck = (event, setMessage) => {
   //event.preventDefault();
 };
 
-const onLogoutSubmit = setMessage => {
+const onLogoutSubmit = (setAuthUser, setMessage) => {
+  setAuthUser("");
   Cookies.remove("access_token");
+  // QUESTION: dialog sometimes does not appear
   setMessage({ variant: "info", content: "Logged Out" });
 };
 //-------------------------------------------
@@ -121,7 +123,7 @@ const useAuth = setMessage => {
     onLoginSubmit(event, setAuthUser, setMessage);
   };
   const logout = () => {
-    onLogoutSubmit(setMessage);
+    onLogoutSubmit(setAuthUser, setMessage);
   };
   const check = event => {
     onAuthCheck(event);
