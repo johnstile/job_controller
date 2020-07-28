@@ -106,9 +106,6 @@ const onLogoutSubmit = (setAuthUser, setMessage) => {
 //-------------------------------------------
 const useAuth = setMessage => {
   const [authUser, setAuthUser] = useState("");
-  //
-  // QUESTION:  When I hvae a cookie, this isn't preventing the login
-  //
   useEffect(() => {
     const token = Cookies.get("access_token");
     if (token) {
