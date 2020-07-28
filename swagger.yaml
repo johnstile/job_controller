@@ -199,6 +199,12 @@ paths:
       operationId: getJobs
       tags:
         - jobs
+      parameters:
+        - "$ref": "#/components/parameters/getJobsParamCurrent"
+        - "$ref": "#/components/parameters/getJobsParamDirection"
+        - "$ref": "#/components/parameters/getJobsParamShow"
+      produces:
+        - application/json
       responses:
         "200":
           description: An array of job objects
@@ -275,6 +281,31 @@ components:
       description: User set Station Identifier
       required: false
       type: string
+    getJobsParamCurrent:
+      name: current_job 
+      in: query
+      schema:
+        type: string 
+        default: ''
+      required: false
+      description: ID of first job in list
+    getJobsParamDirection:
+      name: direction 
+      in: query
+      schema:
+        type: string 
+        enum: ['next', 'prev']
+        example: 'next'
+      description: Direction to move in list
+      required: false
+    getJobsParamShow:
+      name: show_n_jobs 
+      in: query
+      schema:
+        type: integer
+        example: 5
+      description: The numbers of items to return
+      required: false
   schemas:
     PostAuth:
       type: object
