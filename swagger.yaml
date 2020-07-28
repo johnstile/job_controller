@@ -49,7 +49,7 @@ paths:
         <br>2) Click "Authorize" in upper right of this interface,
         <br>3) Paste the copied body into the form that pops up
         <br>4) Now protected routes will work (the lock will show unlocked)
-      operationId: postLogin
+      operationId: postAuth
       requestBody:
         description: Authentication credentials
         required: true
@@ -74,7 +74,7 @@ paths:
       description: >-
         Requires a valid JWT for HTTP 200.
         Returns authenticated user and claims as json
-      operationId: getStations
+      operationId: getAuth
       tags:
         - auth
       responses:
@@ -190,6 +190,83 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       security:
         - api_key: []
+  "/jobs":
+    get:
+      summary: Get a list of jobs
+      description: >-
+        Returns a list of job type objects, job type objects map
+        have the parameters for the job, an id, and status
+      operationId: getJobs
+      tags:
+        - jobs
+      responses:
+        "200":
+          description: An array of job objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/ArrayOfJobs"
+        "401":
+          $ref: "#/components/responses/AuthorizationError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      security:
+        - api_key: []
+    post:
+      tags:
+        - jobs
+      summary: Add a job
+      operationId: addJob
+      requestBody:
+        description: Job, without unique id or status produced by server
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PostJobs"
+      security:
+        - api_key: []
+      responses:
+        "201":
+          $ref: "#/components/responses/Created"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  "/jobs/{jobId}":
+    put:
+      tags:
+        - jobs
+      summary: Change a job
+      operationId: updateJob
+      parameters:
+        - "$ref": "#/components/parameters/jobIdParam"
+      requestBody:
+        description: Job id and action
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/PostJobsAction"
+      responses:
+        "202":
+          $ref: "#/components/responses/Accepted"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      security:
+        - api_key: []
 components:
   parameters:
     stationIdParam:
@@ -246,16 +323,6 @@ components:
             type: string
           NetToSerialMac:
             type: string
-    ApiResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-        type:
-          type: string
-        message:
-          type: string
     User:
       type: object
       properties:
@@ -280,6 +347,44 @@ components:
           description: User Status
       xml:
         name: User
+    PostJobs:
+      type: object
+      properties:
+        SerialNumber:
+          description: Serial Number of Target for Job
+          type: string
+        WorkOrder:
+          description: Batch ID for a set of jobs 
+          type: string
+        StationID:
+          description: Station ID where the job will run
+          type: string
+        Operator:
+          description: User ID of job schedling 
+          type: string
+    ArrayOfJobs:
+      type: array
+      items:
+        type: object
+        properties:
+          SerialNumber:
+            type: string
+          WorkOrder:
+            type: string
+          StationID:
+            type: string
+          Operator:
+            type: string
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
     Error:
       type: object
       required:
