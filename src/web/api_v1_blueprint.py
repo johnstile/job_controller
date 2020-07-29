@@ -3,6 +3,7 @@ REF: https://realpython.com/flask-blueprint/
 REF: https://www.flaskapi.org/api-guide/status-codes/
 """
 
+import os  # For accessing the logs dir
 from flask import Blueprint, current_app, jsonify, request, abort
 import json  # For parsing and creating json
 import uuid  # For unique ids of stations
@@ -17,6 +18,13 @@ from flask_jwt_extended import (
     get_jwt_identity, get_jwt_claims
 )
 
+from rq import exceptions as RqExceptions
+from rq import cancel_job
+from redis import Redis
+from util.redis_killer import KillQueue, KillWorker, KillJob
+from util.job_methods import sleep_and_count
+from rq import cancel_job
+
 # Allow logging to app.logger
 logger = LocalProxy(lambda: current_app.logger)
 
@@ -25,6 +33,8 @@ api_v1_blueprint = Blueprint('api_v1_blueprint', __name__)
 
 jwt = JWTManager()
 
+# TODO: Choose storage solution backend
+job_logs_dir = os.path.join('/app/job_logs')
 
 @api_v1_blueprint.route('/version')
 def index():
@@ -267,6 +277,151 @@ def user_identity_lookup(user):
 # ---------------------------------------------
 # AUTHENTICATION UTILITY FUNC: END
 # ---------------------------------------------
+# ---------------------------------------------
+# JOBS UTILITY FUNC: BEGIN
+# ---------------------------------------------
+def get_jobs_list(current_job, show_n_jobs, step):
+    """Return all jobs, active or not
+    Using the job timestamp as the job_id (YYYYMMDD_HHMMSS)
+    :param show_n_jobs: size of list of jobs to show
+    :param current_job: date of folder for first element in group
+    :param step: pages to step in a direction (+/-)
+    :return:  list of dict
+    """
+    logger.info(
+        (
+            "Called get_job_list() with "
+            "show_n_builds:{}, "
+            "current_id:{}, "
+            "step:{}"
+        ).format(
+            show_n_jobs,
+            current_job,
+            step
+        )
+    )
+    # Full list of job logs
+    jobs_list = sorted(os.listdir(job_logs_dir), reverse=True)
+    logger.info("==>jobs_list: {}".format(jobs_list))
+
+    jobs_list_length = len(jobs_list)
+    logger.info("==>jobs_list_length: {}".format(jobs_list_length))
+
+    # Get the index of the current job, or use 0
+    # But they may have removed the current job
+    if current_job:
+        try:
+            current_index = jobs_list.index(current_job)
+        except ValueError:
+            current_index = 0
+    else:
+        current_index = 0
+    logger.info("==>current_index: {}".format(current_index))
+
+    if step:
+        step = int(step)
+    else:
+        step = 0
+    logger.info("==>step: {}".format(step))
+
+    # From option "show_n_jobs" figure out size limit
+    limit = len(jobs_list)
+    if show_n_jobs:
+        limit = int(show_n_jobs)
+    logger.info("==>limit: {}".format(limit))
+
+    new_start_index = current_index + limit * step
+    logger.info("==>new_start_index:{}".format(new_start_index))
+
+    # Protection from list bounds
+    if new_start_index < 0:
+        new_start_index = 0
+    elif new_start_index >= jobs_list_length - limit:
+        new_start_index = jobs_list_length - limit
+    logger.info("==>new_start_index:{}".format(new_start_index))
+
+    # default to size of length (shows small number of jobs)
+    new_end_index = new_start_index + limit
+    # default to jobs_list_length (shows all jobs)
+    # new_end_index = jobs_list_length
+    logger.info("==>new_end_index:{}".format(new_end_index))
+
+    job_dir_sublist = jobs_list[new_start_index:new_end_index]
+    logger.info("==>job_dir_sublist:{}".format(job_dir_sublist))
+
+    # Look inside each dir for params and status
+    job_configs = []
+    for job_dir in job_dir_sublist:
+        job_config_file = os.path.join(job_logs_dir, job_dir, "job_scheduled.json")
+        with open(job_config_file, 'r') as fh_config:
+            job_config = json.load(fh_config)
+            logger.info("log:{}, config:{}".format(job_dir, job_config))
+            job_configs.append(
+                {
+                    "jobType": job_config['Fixture']['JobType'],
+                    'deviationId': str(job_config['Input']['Deviation']),
+                    'stationId': job_config['Fixture']['StationID'],
+                    'manufacturingSite': job_config['Fixture']['ManufacturingSite'],
+                    'operatorId': job_config['Input']['Operator'],
+                    'partNumber': job_config['Input']['PartNumber'],
+                    'revisionId': job_config['Input']['Revision'],
+                    'serialNumber': job_config['Input']['SerialNumber'],
+                    'workOrderId': job_config['Input']['WorkOrder'],
+                    'Date': job_dir,
+                    'Status': job_config['Status']
+                }
+            )
+
+    # Ask Redis for status of jobs in our list
+    redis_jobs = get_job_queue()
+    for redis_job in redis_jobs:
+        logger.info("==>redis_job: {}".format(redis_job))
+        job_config = next((job_config for job_config in job_configs if job_config['Date'] == redis_job['job_id']), None)
+        if job_config:
+            job_config['Status'] = redis_job['status']
+
+    return {"total_jobs": len(jobs_list), "configs": job_configs}
+
+def get_job_queue():
+    """
+    Return jobs running or scheduled
+    - Scheduled jobs are in the Queue
+    - Running jobs are in Workers
+    :return: a list of dict, with job_id, status, and form fields from the Run Test page
+    """
+    jobs = []  # will return this list
+    #redis_conn = Redis()
+    q = Queue('JOB', connection=redis_conn)
+    flog.info('q:{}'.format(q))
+    flog.info('get_jobs:{}'.format(q.get_jobs))
+    # Get scheduled jobs from Queue
+    for job in q.jobs:
+        flog.info('\tScheduled Job:{}'.format(job))
+        job_config = parse_config(job.id)
+        job_config['job_id'] = job.id
+        job_config['status'] = "scheduled"
+        jobs.append(job_config)
+
+    # Get running jobs from Workers
+    workers = Worker.all(queue=q)
+    flog.info('workers:{}'.format(workers))
+    for worker in workers:
+        job = worker.get_current_job()
+        if job:
+            job_config = parse_config(job.id)
+            job_config['job_id'] = job.id
+            job_config['status'] = "running"
+            job_config['pid'] = worker.pid
+            jobs.append(job_config)
+
+    flog.info('Total Found jobs:{}'.format(jobs))
+    return jobs
+
+# ---------------------------------------------
+# JOBS UTILITY FUNC: BEGIN
+# ---------------------------------------------
+
+
 # --------------------------------------------
 # STATIONS API: BEGIN
 # --------------------------------------------
@@ -319,6 +474,158 @@ def stations_delete(station_id):
 
 # --------------------------------------------
 # STATIONS API: END
+# --------------------------------------------
+# --------------------------------------------
+# JOB API: BEGIN
+# --------------------------------------------
+# Ideas for routes.
+# jobs_list()      GET  /jobs
+# job_post()       POST /jobs
+# job_change()     PUT  /jobs/{id}
+# --------------------------------------------
+@api_v1_blueprint.route('/jobs', methods=['GET'])
+def job_list():
+    """Get all jobs and important params
+    current_job: log folder name
+    direction: 'next' | 'prev' (default: 'prev)
+    show_n_jobs: number of jobs to show (default: all)
+    Return: list of dict as json, with params and job status
+    """
+    current_job = request.args.get('current_job') or None
+    show_n_jobs = request.args.get('show_n_jobs')
+    step = request.args.get('step') or 'next'
+
+    logger.info(
+        (
+            'Called job_list() route:GET /jobs?current_job={}&show_n_jobs={}&step=step'
+        ).format(
+            current_job,
+            show_n_jobs,
+            step
+        )
+    )
+    jobs = get_jobs_list(current_job=current_job, show_n_jobs=show_n_jobs, step=step)
+    if jobs is None:
+        return {'error': "No Jobs found"}, status.HTTP_400_BAD_REQUEST
+    else:
+        return json.dumps(jobs, sort_keys=True, indent=4, separators=(',', ': ')), status.HTTP_200_OK
+
+
+
+@api_v1_blueprint.route("/jobs", methods=['POST'])
+def job_new():
+    """Start a job
+    receive a json with info from the user.
+    """
+    flog.info('Called job_new()');
+
+    if not request.json:
+        abort(400)
+
+    # this is used as the log directory name & Redis pubsub stream
+    now = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+    flog.info('now: {}'.format(now))
+
+    # Store posted request
+    job_request = request.get_json()
+    flog.info('Job Request: {}'.format(job_request))
+
+    # Load stations
+    stations = load_stations()
+    if 'error' in stations:
+        app.logger.error("Load Stations Had Error:{}".format(stations))
+        return  # FAIL
+
+    # Locate the station based on job request
+    station = next(
+        station for station in stations if station['StationID'] == job_request['StationID'])
+    app.logger.info("Found Station:{}".format(station))
+
+    # Create job config file, consumed by test 
+    job_config = {}
+
+    job_config['Input'] = {
+        'SerialNumber': job_request['SerialNumber'],
+        'PartNumber': job_request['PartNumber'],
+        'Revision': job_request['RevisionId'],
+        'Deviation': job_request['DeviationId'],
+        'WorkOrder': job_request['WorkOrderId'],
+        'Operator': job_request['OperatorId'],
+    }
+
+    job_config['Fixture'] = {
+        'StationID': station['StationID'],
+        'JobType': station['JobType'],
+        'ManufacturingSite': station['ManufacturingSite']
+    }
+
+    job_config['Comm'] = {
+        "Type": "network",
+        "Port": 50000,
+        "NetToSerialMac": station['NetToSerialMac'],
+        "NetAddr": None,
+        "TimeOut": 30,
+        "Debug": True
+    }
+
+    job_config['Log'] = {'Level': 'debug'}
+
+    job_config['Data'] = now
+    job_config['Status'] = 'scheduled'
+    #
+    # Make dir for all jobs
+    #
+    if not os.path.isdir(job_logs_dir):
+        os.mkdir(job_logs_dir)
+    #
+    # Make dir for this job
+    #
+    job_log_dir = os.path.join(job_logs_dir, now)
+    if not os.path.isdir(job_log_dir):
+        os.mkdir(job_log_dir)
+    #
+    # Write this job config file
+    # 'now' is used for both job id and directory name, to find the config
+    #
+    job_config_file = os.path.join(job_logs_dir, now, "job_scheduled.json")
+    with open(job_config_file, 'w') as fh_config:
+        json.dump(job_config, fh_config, sort_keys=True, indent=4, separators=(',', ': '))
+    app.logger.info("Saved :{}".format(job_config_file))
+    #
+    # Add job to the 'JOB' queue
+    #
+    #redis_conn = Redis()
+    q = Queue('JOB', connection=redis_conn)  # no args implies the default queue
+    q_before = len(q)
+    job = q.enqueue(
+        sleep_and_count,
+        job_configuration_file=job_config_file,
+        now=now,
+        job_id=now,
+        job_timeout=2600
+    )
+    # Collect some info about the job
+    try:
+        job_id = job.id
+        job_enqueued = Job.fetch(job_id, connection=redis_conn)
+        app.logger.info("The job is queued: {}".format(job_enqueued.id))
+        msg = {"msg": "Enqueued", "jobId": job_id}
+        # Publish new channel to default stream
+        redis_publish_message(msg_type='info', msg_text=json.dumps(msg))
+        response = jsonify(msg), 201
+    except RqExceptions.NoSuchJobError as e:
+        msg = {"error": str(e), "jobId": now}
+        redis_publish_message(msg_type='error', msg_text=json.dumps(msg))
+        response = jsonify(msg), 404
+    except AttributeError as e:
+        msg = {"error": str(e), "jobId": now}
+        redis_publish_message(msg_type='error', msg_text=json.dumps(msg))
+        response = jsonify(msg), 418
+    flog.info('Job id: {}, msg:{}'.format(now, msg))
+    return response
+
+# --------------------------------------------
+# JOB API: END
 # --------------------------------------------
 # --------------------------------------------
 # AUTHENTICATION API: BEGIN

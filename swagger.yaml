@@ -201,7 +201,7 @@ paths:
         - jobs
       parameters:
         - "$ref": "#/components/parameters/getJobsParamCurrent"
-        - "$ref": "#/components/parameters/getJobsParamDirection"
+        - "$ref": "#/components/parameters/getJobsParamStep"
         - "$ref": "#/components/parameters/getJobsParamShow"
       produces:
         - application/json
@@ -289,14 +289,14 @@ components:
         default: ''
       required: false
       description: ID of first job in list
-    getJobsParamDirection:
-      name: direction 
+    getJobsParamStep:
+      name: step
       in: query
       schema:
         type: string 
         enum: ['next', 'prev']
         example: 'next'
-      description: Direction to move in list
+      description: Step in this direction
       required: false
     getJobsParamShow:
       name: show_n_jobs 
