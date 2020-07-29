@@ -33,6 +33,7 @@ services:
       gunicorn --bind="0.0.0.0:80" --workers 2 --timeout 30 --reload --log-level=debug --log-file=- "web.myapp:app"
     volumes:
       - ./src/web:/app/web
+      - job_logs:/app/job_logs
 
 
   redis:
@@ -56,6 +57,25 @@ services:
     ports:
       - 80:80
       - 443:443
+    volumes:
+      - job_logs:/app/job_logs
+
+  worker:
+    image: 'johnnywhoops/worker:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: 'no' 
+    depends_on:
+      - 'redis'
+    env_file:
+      - '.env'
+    deploy:
+      replicas: 1
+    volumes:
+      - job_logs:/app/job_logs
 
 volumes:
   redis: {}
+  job_logs: {}
+

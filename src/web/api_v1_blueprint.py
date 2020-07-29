@@ -546,23 +546,28 @@ def job_new():
     stations = load_stations()
     if 'error' in stations:
         logger.error("Load Stations Had Error:{}".format(stations))
-        return  # FAIL
+        return {"error": "Station Unavailable", "jobId": now}, status.HTTP_503_SERVICE_UNAVAILABLE
 
     # Locate the station based on job request
     station = next(
-        station for station in stations if station['StationID'] == job_request['StationID'])
-    logger.info("Found Station:{}".format(station))
+        (x for x in stations if x['StationID'] == job_request['StationID']),
+        None
+    )
+
+    if station is not None:
+        logger.info("Found Station:{}".format(station))
+    else:
+        logger.critical("Not Found Station:{}".format(station))
+        return {"error": "Station Not Found", "jobId": now}, status.HTTP_404_NOT_FOUND
 
     # Create job config file, consumed by test 
     job_config = {}
 
     job_config['Input'] = {
         'SerialNumber': job_request['SerialNumber'],
-        'PartNumber': job_request['PartNumber'],
-        'Revision': job_request['RevisionId'],
-        'Deviation': job_request['DeviationId'],
-        'WorkOrder': job_request['WorkOrderId'],
-        'Operator': job_request['OperatorId'],
+        'WorkOrder': job_request['WorkOrder'],
+        'Operator': job_request['Operator'],
+        'StationID' : job_request['StationID']
     }
 
     job_config['Fixture'] = {
@@ -619,15 +624,15 @@ def job_new():
     # Collect some info about the job
     try:
         job_id = job.id
-        logger.logger.info("The job is queued: {}".format(job_id))
+        logger.info("The job is queued: {}".format(job_id))
         msg = {"msg": "Enqueued", "jobId": job_id}
-        response = jsonify(msg), 201
+        response = jsonify(msg), status.HTTP_201_CREATED
     except RqExceptions.NoSuchJobError as e:
         msg = {"error": str(e), "jobId": now}
-        response = jsonify(msg), 404
+        response = jsonify(msg), status.HTTP_404_NOT_FOUND
     except AttributeError as e:
         msg = {"error": str(e), "jobId": now}
-        response = jsonify(msg), 418
+        response = jsonify(msg), status.HTTP_418_IM_A_TEAPOT
     logger.info('Job id: {}, msg:{}'.format(now, msg))
     return response
 

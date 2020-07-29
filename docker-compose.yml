@@ -17,6 +17,9 @@ services:
       - BUILD_ENV=RELEASE
     depends_on:
       - 'redis'
+    volumes:
+      - job_logs:/app/job_logs
+
 
   redis:
     image: 'redis:6.0-alpine'
@@ -38,6 +41,22 @@ services:
     ports:
       - 80:80
       - 443:443
+    volumes:
+      - job_logs:/app/job_logs
+
+  worker:
+    image: 'johnnywhoops/worker:${TAG}'
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      - 'redis'
+    env_file:
+      - '.env'
+    deploy:
+      replicas: 1
+    volumes:
+      - job_logs:/app/job_logs
 
 volumes:
   redis: {}

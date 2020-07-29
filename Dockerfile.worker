@@ -1,0 +1,67 @@
+#
+# build python worker daemon
+# 1. setup.py packages src into a .whl file
+# 2. pip intall setup.py in flask container
+# 3. Launch daemon
+#
+
+# build environment
+
+FROM python:3.8-alpine3.11 AS builder
+
+RUN apk add --no-cache \
+    build-base=0.5-r1 \
+    git
+
+RUN addgroup -g 1000 -S python && \
+    adduser -u 1000 -S python -G python
+
+# set environment variables
+ENV PYTHONUNBUFFERED=1
+
+COPY ./src /code/src
+
+COPY setup.py /code
+
+COPY README.md /code
+
+# NOTE: myapp.py looks for "flask.cfg"
+COPY flask.cfg /code/src/web/flask.cfg
+RUN if [ "$BUILD_ENV" = "DEV" ]; then COPY flask-dev.cfg /code/src/web/flask.cfg; fi
+
+RUN chown -R python:python /code
+
+WORKDIR /code
+
+USER python
+
+RUN python setup.py bdist_wheel
+
+FROM python:3.8-alpine3.11 AS worker
+
+RUN mkdir -p /app/job_logs
+
+WORKDIR /app
+
+ENV PATH="${PATH}:/app/bin" \
+    PYTHONPATH=.
+
+RUN apk add --no-cache \
+    curl \
+    libffi \
+    openssl
+
+RUN mkdir -p /app/job_logs
+
+COPY --from=builder /code/dist/*.whl /packages/
+
+# hadolint ignore=DL3013
+RUN apk add --no-cache --virtual .build-deps \
+    build-base \
+    libffi-dev \
+    openssl-dev \
+    && pip install --upgrade --target /app /packages/*.whl \
+    && rm -rf /root/.cache/pip/* \
+    && apk --purge del .build-deps
+
+CMD python worker/worker.py
