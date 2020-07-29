@@ -293,9 +293,8 @@ components:
       name: step
       in: query
       schema:
-        type: string 
-        enum: ['next', 'prev']
-        example: 'next'
+        type: integer
+        example: 5
       description: Step in this direction
       required: false
     getJobsParamShow:

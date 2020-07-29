@@ -7,6 +7,7 @@ import os  # For accessing the logs dir
 from flask import Blueprint, current_app, jsonify, request, abort
 import json  # For parsing and creating json
 import uuid  # For unique ids of stations
+import time  # For job id
 from flask_redis import FlaskRedis  # For persistent storage of stations
 import redis  # for exception handling
 from flask_api import status  # To return named http status codes
@@ -359,14 +360,12 @@ def get_jobs_list(current_job, show_n_jobs, step):
             job_configs.append(
                 {
                     "jobType": job_config['Fixture']['JobType'],
-                    'deviationId': str(job_config['Input']['Deviation']),
+                    'workOrder': str(job_config['Input']['WorkOrder']),
                     'stationId': job_config['Fixture']['StationID'],
                     'manufacturingSite': job_config['Fixture']['ManufacturingSite'],
                     'operatorId': job_config['Input']['Operator'],
                     'partNumber': job_config['Input']['PartNumber'],
-                    'revisionId': job_config['Input']['Revision'],
                     'serialNumber': job_config['Input']['SerialNumber'],
-                    'workOrderId': job_config['Input']['WorkOrder'],
                     'Date': job_dir,
                     'Status': job_config['Status']
                 }
@@ -390,21 +389,21 @@ def get_job_queue():
     :return: a list of dict, with job_id, status, and form fields from the Run Test page
     """
     jobs = []  # will return this list
-    #redis_conn = Redis()
-    q = Queue('JOB', connection=redis_conn)
-    flog.info('q:{}'.format(q))
-    flog.info('get_jobs:{}'.format(q.get_jobs))
+    redis_conn = FlaskRedis(current_app)
+    q = KillQueue('JOB', connection=redis_conn)
+    logger.info('q:{}'.format(q))
+    logger.info('get_jobs:{}'.format(q.get_jobs))
     # Get scheduled jobs from Queue
     for job in q.jobs:
-        flog.info('\tScheduled Job:{}'.format(job))
+        logger.info('\tScheduled Job:{}'.format(job))
         job_config = parse_config(job.id)
         job_config['job_id'] = job.id
         job_config['status'] = "scheduled"
         jobs.append(job_config)
 
     # Get running jobs from Workers
-    workers = Worker.all(queue=q)
-    flog.info('workers:{}'.format(workers))
+    workers = KillWorker.all(queue=q)
+    logger.info('workers:{}'.format(workers))
     for worker in workers:
         job = worker.get_current_job()
         if job:
@@ -414,8 +413,21 @@ def get_job_queue():
             job_config['pid'] = worker.pid
             jobs.append(job_config)
 
-    flog.info('Total Found jobs:{}'.format(jobs))
+    logger.info('Total Found jobs:{}'.format(jobs))
     return jobs
+
+def parse_config(job_id):
+    """Read the config file from the job log
+    :return:  dict with job parameters
+    """
+    logger.debug("Get config")
+    log_dir_run = os.path.join(job_logs_dir, job_id)
+    config_run_file = os.path.join(log_dir_run, "job_scheduled.json")
+    logger.debug("config_run_file: {}".format(config_run_file))
+
+    with open(config_run_file, 'r') as config_fh:
+        config_data = json.load(config_fh)
+        return config_data
 
 # ---------------------------------------------
 # JOBS UTILITY FUNC: BEGIN
@@ -487,13 +499,13 @@ def stations_delete(station_id):
 def job_list():
     """Get all jobs and important params
     current_job: log folder name
-    direction: 'next' | 'prev' (default: 'prev)
-    show_n_jobs: number of jobs to show (default: all)
+    steps: int: number of steps  (e.g. +/- 5
+    show_n_jobs int: number of jobs to show (default: all)
     Return: list of dict as json, with params and job status
     """
     current_job = request.args.get('current_job') or None
     show_n_jobs = request.args.get('show_n_jobs')
-    step = request.args.get('step') or 'next'
+    step = request.args.get('step') or 0
 
     logger.info(
         (
@@ -517,29 +529,29 @@ def job_new():
     """Start a job
     receive a json with info from the user.
     """
-    flog.info('Called job_new()');
+    logger.info('Called job_new()');
 
     if not request.json:
         abort(400)
 
     # this is used as the log directory name & Redis pubsub stream
     now = time.strftime("%Y%m%d-%H%M%S", time.localtime())
-    flog.info('now: {}'.format(now))
+    logger.info('now: {}'.format(now))
 
     # Store posted request
     job_request = request.get_json()
-    flog.info('Job Request: {}'.format(job_request))
+    logger.info('Job Request: {}'.format(job_request))
 
     # Load stations
     stations = load_stations()
     if 'error' in stations:
-        app.logger.error("Load Stations Had Error:{}".format(stations))
+        logger.error("Load Stations Had Error:{}".format(stations))
         return  # FAIL
 
     # Locate the station based on job request
     station = next(
         station for station in stations if station['StationID'] == job_request['StationID'])
-    app.logger.info("Found Station:{}".format(station))
+    logger.info("Found Station:{}".format(station))
 
     # Create job config file, consumed by test 
     job_config = {}
@@ -590,12 +602,12 @@ def job_new():
     job_config_file = os.path.join(job_logs_dir, now, "job_scheduled.json")
     with open(job_config_file, 'w') as fh_config:
         json.dump(job_config, fh_config, sort_keys=True, indent=4, separators=(',', ': '))
-    app.logger.info("Saved :{}".format(job_config_file))
+    logger.info("Saved :{}".format(job_config_file))
     #
     # Add job to the 'JOB' queue
     #
-    #redis_conn = Redis()
-    q = Queue('JOB', connection=redis_conn)  # no args implies the default queue
+    redis_conn = FlaskRedis(current_app)
+    q = KillQueue('JOB', connection=redis_conn)  # no args implies the default queue
     q_before = len(q)
     job = q.enqueue(
         sleep_and_count,
@@ -607,21 +619,16 @@ def job_new():
     # Collect some info about the job
     try:
         job_id = job.id
-        job_enqueued = Job.fetch(job_id, connection=redis_conn)
-        app.logger.info("The job is queued: {}".format(job_enqueued.id))
+        logger.logger.info("The job is queued: {}".format(job_id))
         msg = {"msg": "Enqueued", "jobId": job_id}
-        # Publish new channel to default stream
-        redis_publish_message(msg_type='info', msg_text=json.dumps(msg))
         response = jsonify(msg), 201
     except RqExceptions.NoSuchJobError as e:
         msg = {"error": str(e), "jobId": now}
-        redis_publish_message(msg_type='error', msg_text=json.dumps(msg))
         response = jsonify(msg), 404
     except AttributeError as e:
         msg = {"error": str(e), "jobId": now}
-        redis_publish_message(msg_type='error', msg_text=json.dumps(msg))
         response = jsonify(msg), 418
-    flog.info('Job id: {}, msg:{}'.format(now, msg))
+    logger.info('Job id: {}, msg:{}'.format(now, msg))
     return response
 
 # --------------------------------------------
