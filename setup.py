@@ -17,7 +17,8 @@ install_requires = [
   "Flask-Cors>=3.0.8",
   "flask_redis>=0.4.0",
   "Flask-API>=2.0",
-  "Flask-JWT-Extended>=3.24.1"
+  "Flask-JWT-Extended>=3.24.1",
+  "rq>=1.5.0"
 ] 
 
 setup_requires = []
@@ -38,6 +39,7 @@ extras_require = {
         "flake8",
         "autopep8",
         "sphinx",
+        "rq-dashboard"
     ]
     + tests_require
 }
